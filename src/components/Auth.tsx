@@ -15,14 +15,24 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+import { AuthApiError } from '@supabase/supabase-js';
 
 import { supabase } from '../lib/supabase';
 import { useAwardPalette } from '../theme/awardPalette';
 import type { AwardPalette } from '../theme/awardPalette';
 import { AwardBackground } from './AwardBackground';
 
+const PASSWORD_RESET_REDIRECT =
+  process.env.EXPO_PUBLIC_SUPABASE_RESET_REDIRECT ?? 'incomex://auth/callback';
+
 type Mode = 'signIn' | 'signUp';
-type FeedbackState = { type: 'success' | 'error'; text: string } | null;
+type FeedbackState = {
+  type: 'success' | 'error';
+  text: string;
+  actionLabel?: string;
+  onAction?: () => void;
+} | null;
 
 type ModeButtonProps = {
   value: Mode;
@@ -126,6 +136,23 @@ export const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const triggerNotification = useCallback((type: Haptics.NotificationFeedbackType) => {
+    void Haptics.notificationAsync(type).catch(() => undefined);
+  }, []);
+
+  const showErrorFeedback = useCallback(
+    (text: string, options?: { actionLabel?: string; onAction?: () => void }) => {
+      triggerNotification(Haptics.NotificationFeedbackType.Error);
+      setFeedback({ type: 'error', text, ...options });
+    },
+    [triggerNotification],
+  );
+
+  const showSuccessFeedback = useCallback((text: string) => {
+    triggerNotification(Haptics.NotificationFeedbackType.Success);
+    setFeedback({ type: 'success', text });
+  }, [triggerNotification]);
+
   useEffect(() => {
     if (mode === 'signIn') {
       setConfirmPassword('');
@@ -156,19 +183,40 @@ export const Auth = () => {
   const confirmValid = mode === 'signUp' ? password === confirmPassword && confirmPassword.trim().length >= 6 : true;
   const canSubmit = !loading && emailValid && passwordValid && confirmValid;
 
+  const handlePasswordReset = useCallback(async () => {
+    if (!emailValid) {
+      showErrorFeedback('Introduce un correo válido para recuperar tu contraseña.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setFeedback(null);
+      await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: PASSWORD_RESET_REDIRECT,
+      });
+      showSuccessFeedback('Te enviamos un correo para restablecer tu contraseña.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No pudimos enviar el enlace de recuperación. Intenta de nuevo.';
+      showErrorFeedback(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [email, emailValid, showErrorFeedback, showSuccessFeedback]);
+
   const handleSubmit = async () => {
     if (!emailValid) {
-      setFeedback({ type: 'error', text: 'Introduce un correo válido.' });
+      showErrorFeedback('Introduce un correo válido.');
       return;
     }
 
     if (!passwordValid) {
-      setFeedback({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres.' });
+      showErrorFeedback('La contraseña debe tener al menos 6 caracteres.');
       return;
     }
 
     if (!confirmValid) {
-      setFeedback({ type: 'error', text: 'Las contraseñas no coinciden.' });
+      showErrorFeedback('Las contraseñas no coinciden.');
       return;
     }
 
@@ -179,26 +227,49 @@ export const Auth = () => {
       if (mode === 'signIn') {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) {
-          throw error;
+          if (error instanceof AuthApiError && error.status === 400) {
+            showErrorFeedback('Correo o contraseña incorrectos.', {
+              actionLabel: 'Recuperar contraseña',
+              onAction: handlePasswordReset,
+            });
+          } else {
+            const message = error instanceof Error ? error.message : 'No pudimos completar la acción. Intenta de nuevo.';
+            showErrorFeedback(message);
+          }
+          return;
         }
-        setFeedback({ type: 'success', text: '¡Bienvenido de nuevo! Tu panel te espera.' });
+        showSuccessFeedback('¡Bienvenido de nuevo! Tu panel te espera.');
       } else {
         const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
         if (error) {
-          throw error;
+          if (
+            error instanceof AuthApiError &&
+            error.status === 400 &&
+            typeof error.message === 'string' &&
+            error.message.toLowerCase().includes('already')
+          ) {
+            showErrorFeedback('Ya existe una cuenta con ese correo.', {
+              actionLabel: 'Recuperar contraseña',
+              onAction: handlePasswordReset,
+            });
+          } else {
+            const message = error instanceof Error ? error.message : 'No pudimos completar la acción. Intenta de nuevo.';
+            showErrorFeedback(message);
+          }
+          return;
         }
 
         if (data.session) {
-          setFeedback({ type: 'success', text: 'Cuenta creada. Vamos a diseñar tu ritmo financiero.' });
+          showSuccessFeedback('Cuenta creada. Vamos a diseñar tu ritmo financiero.');
         } else {
-          setFeedback({ type: 'success', text: 'Te enviamos un correo de verificación para activar tu cuenta.' });
+          showSuccessFeedback('Te enviamos un correo de verificación para activar tu cuenta.');
         }
 
         setMode('signIn');
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No pudimos completar la acción. Intenta de nuevo.';
-      setFeedback({ type: 'error', text: message });
+      showErrorFeedback(message);
     } finally {
       setLoading(false);
     }
@@ -268,6 +339,19 @@ export const Auth = () => {
                   >
                     {feedback.text}
                   </Text>
+                  {feedback.actionLabel && feedback.onAction ? (
+                    <TouchableOpacity
+                      style={[styles.feedbackAction, { borderColor: palette.border }]}
+                      onPress={feedback.onAction}
+                      activeOpacity={0.85}
+                    >
+                      <Text
+                        style={[styles.feedbackActionText, { color: palette.highlight }]}
+                      >
+                        {feedback.actionLabel}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
                 </View>
               ) : null}
 
@@ -453,6 +537,19 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 12,
     marginBottom: 18,
+    gap: 8,
+  },
+  feedbackAction: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+  },
+  feedbackActionText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.4,
   },
   fieldContainer: {
     marginBottom: 14,
