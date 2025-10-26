@@ -11,9 +11,9 @@ type Props = {
 
 export const Account = ({ session }: Props) => {
   const [loading, setLoading] = useState(true);
-  const [username, setUsername] = useState<string | null>(null);
-  const [website, setWebsite] = useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>('');
+  const [website, setWebsite] = useState<string>('');
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
 
   useEffect(() => {
     void getProfile();
@@ -22,26 +22,15 @@ export const Account = ({ session }: Props) => {
   const getProfile = async () => {
     try {
       setLoading(true);
-      const { user } = session;
-      if (!user) {
-        throw new Error('No user on the session.');
-      }
-
-      const { data, error, status } = await supabase
-        .from('profiles')
-        .select(`username, website, avatar_url`)
-        .eq('id', user.id)
-        .single();
-
-      if (error && status !== 406) {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
         throw error;
       }
 
-      if (data) {
-        setUsername(data.username);
-        setWebsite(data.website);
-        setAvatarUrl(data.avatar_url);
-      }
+      const metadata = data.user?.user_metadata ?? {};
+      setDisplayName(typeof metadata.display_name === 'string' ? metadata.display_name : '');
+      setWebsite(typeof metadata.website === 'string' ? metadata.website : '');
+      setAvatarUrl(typeof metadata.avatar_url === 'string' ? metadata.avatar_url : '');
     } catch (error) {
       if (error instanceof Error) {
         Alert.alert(error.message);
@@ -51,26 +40,23 @@ export const Account = ({ session }: Props) => {
     }
   };
 
-  const updateProfile = async ({ username, website, avatar_url }: { username: string | null; website: string | null; avatar_url: string | null }) => {
+  const updateProfile = async ({ full_name, website, avatar_url }: { full_name: string; website: string; avatar_url: string }) => {
     try {
       setLoading(true);
-      const { user } = session;
-      if (!user) {
-        throw new Error('No user on the session.');
-      }
 
-      const updates = {
-        id: user.id,
-        username,
-        website,
-        avatar_url,
-        updated_at: new Date(),
-      };
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          display_name: full_name.trim().length > 0 ? full_name.trim() : null,
+          website: website.trim().length > 0 ? website.trim() : null,
+          avatar_url: avatar_url.trim().length > 0 ? avatar_url.trim() : null,
+        },
+      });
 
-      const { error } = await supabase.from('profiles').upsert(updates);
       if (error) {
         throw error;
       }
+
+      await getProfile();
     } catch (error) {
       if (error instanceof Error) {
         Alert.alert(error.message);
@@ -87,17 +73,17 @@ export const Account = ({ session }: Props) => {
       </View>
 
       <View style={styles.verticallySpaced}>
-        <Input label="Username" value={username ?? ''} onChangeText={setUsername} />
+  <Input label="Nombre" value={displayName} onChangeText={setDisplayName} />
       </View>
 
       <View style={styles.verticallySpaced}>
-        <Input label="Website" value={website ?? ''} onChangeText={setWebsite} />
+  <Input label="Website" value={website} onChangeText={setWebsite} />
       </View>
 
       <View style={[styles.verticallySpaced, styles.mt20]}>
         <Button
           title={loading ? 'Loading ...' : 'Update'}
-          onPress={() => updateProfile({ username, website, avatar_url: avatarUrl })}
+          onPress={() => updateProfile({ full_name: displayName, website, avatar_url: avatarUrl })}
           disabled={loading}
         />
       </View>

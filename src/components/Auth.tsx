@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
@@ -18,10 +18,101 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { supabase } from '../lib/supabase';
 import { useAwardPalette } from '../theme/awardPalette';
+import type { AwardPalette } from '../theme/awardPalette';
 import { AwardBackground } from './AwardBackground';
 
 type Mode = 'signIn' | 'signUp';
 type FeedbackState = { type: 'success' | 'error'; text: string } | null;
+
+type ModeButtonProps = {
+  value: Mode;
+  label: string;
+  isActive: boolean;
+  palette: AwardPalette;
+  onPress: (value: Mode) => void;
+};
+
+const ModeButton = ({ value, label, isActive, palette, onPress }: ModeButtonProps) => (
+  <TouchableOpacity
+    accessibilityRole="button"
+    activeOpacity={0.85}
+    onPress={() => onPress(value)}
+    style={[
+      styles.modeButton,
+      {
+        backgroundColor: isActive ? palette.highlight : 'transparent',
+        shadowOpacity: isActive ? 0.18 : 0,
+      },
+    ]}
+  >
+    <Text
+      style={[
+        styles.modeLabel,
+        { color: isActive ? '#FDF4FF' : palette.subtext },
+      ]}
+    >
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
+
+type FormFieldProps = {
+  label: string;
+  icon: keyof typeof Feather.glyphMap;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder: string;
+  palette: AwardPalette;
+  secureTextEntry?: boolean;
+  autoComplete?: 'email' | 'password' | 'off';
+  keyboardType?: 'default' | 'email-address';
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  returnKeyType?: 'next' | 'done';
+  onSubmitEditing?: () => void;
+  trailing?: ReactNode;
+};
+
+const FormField = ({
+  label,
+  icon,
+  value,
+  onChangeText,
+  placeholder,
+  palette,
+  secureTextEntry,
+  autoComplete,
+  keyboardType,
+  autoCapitalize = 'none',
+  returnKeyType = 'next',
+  onSubmitEditing,
+  trailing,
+}: FormFieldProps) => (
+  <View style={styles.fieldContainer}>
+    <Text style={[styles.fieldLabel, { color: palette.subtext }]}>{label}</Text>
+    <View
+      style={[
+        styles.inputWrapper,
+        { backgroundColor: palette.inputBg, borderColor: palette.border },
+      ]}
+    >
+      <Feather name={icon} size={20} color={palette.subtext} style={styles.inputIcon} />
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={palette.placeholder}
+        secureTextEntry={secureTextEntry}
+        autoComplete={autoComplete}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        returnKeyType={returnKeyType}
+        onSubmitEditing={onSubmitEditing}
+        style={[styles.input, { color: palette.text }]}
+      />
+      {trailing}
+    </View>
+  </View>
+);
 
 export const Auth = () => {
   const palette = useAwardPalette();
@@ -113,118 +204,54 @@ export const Auth = () => {
     }
   };
 
-  const ModeButton = ({ value, label }: { value: Mode; label: string }) => {
-    const isActive = mode === value;
-    return (
-      <TouchableOpacity
-        accessibilityRole="button"
-        activeOpacity={0.85}
-        onPress={() => {
-          setMode(value);
-          setFeedback(null);
-        }}
-        style={[
-          styles.modeButton,
-          {
-            backgroundColor: isActive ? palette.highlight : 'transparent',
-            shadowOpacity: isActive ? 0.18 : 0,
-          },
-        ]}
-      >
-        <Text
-          style={[
-            styles.modeLabel,
-            { color: isActive ? '#FDF4FF' : palette.subtext },
-          ]}
-        >
-          {label}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
-  const FormField = ({
-    label,
-    icon,
-    value,
-    onChangeText,
-    placeholder,
-    secureTextEntry,
-    autoComplete,
-    keyboardType,
-    autoCapitalize = 'none',
-    returnKeyType = 'next',
-    onSubmitEditing,
-    trailing,
-  }: {
-    label: string;
-    icon: keyof typeof Feather.glyphMap;
-    value: string;
-    onChangeText: (text: string) => void;
-    placeholder: string;
-    secureTextEntry?: boolean;
-    autoComplete?: 'email' | 'password' | 'off';
-    keyboardType?: 'default' | 'email-address';
-    autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
-    returnKeyType?: 'next' | 'done';
-    onSubmitEditing?: () => void;
-    trailing?: ReactNode;
-  }) => (
-    <View style={styles.fieldContainer}>
-      <Text style={[styles.fieldLabel, { color: palette.subtext }]}>{label}</Text>
-      <View
-        style={[
-          styles.inputWrapper,
-          { backgroundColor: palette.inputBg, borderColor: palette.border },
-        ]}
-      >
-        <Feather name={icon} size={20} color={palette.subtext} style={styles.inputIcon} />
-        <TextInput
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={palette.placeholder}
-          secureTextEntry={secureTextEntry}
-          autoComplete={autoComplete}
-          keyboardType={keyboardType}
-          autoCapitalize={autoCapitalize}
-          returnKeyType={returnKeyType}
-          onSubmitEditing={onSubmitEditing}
-          style={[styles.input, { color: palette.text }]}
-        />
-        {trailing}
-      </View>
-    </View>
-  );
+  const handleModeChange = useCallback((value: Mode) => {
+    setMode(value);
+    setFeedback(null);
+  }, []);
 
   return (
     <AwardBackground>
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.select({ ios: 'padding', android: 'height' })}
+          keyboardVerticalOffset={Platform.select({ ios: 24, android: 0 }) ?? 0}
           style={styles.flex}
         >
           <ScrollView
             contentContainerStyle={styles.content}
+            automaticallyAdjustKeyboardInsets
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             keyboardShouldPersistTaps="always"
           >
             <View style={styles.hero}>
               <View style={[styles.badge, { backgroundColor: palette.badgeBg, borderColor: palette.borderSoft }]}
               >
                 <Feather name="star" size={14} color={palette.accent} />
-                <Text style={[styles.badgeText, { color: palette.accent }]}>Incomex Studio</Text>
+                <Text style={[styles.badgeText, { color: palette.accent }]}>Incomex</Text>
               </View>
 
-              <Text style={[styles.title, { color: palette.text }]}>Dinero que fluye con diseño de autor</Text>
-              <Text style={[styles.subtitle, { color: palette.subtext }]}>Supervisa ingresos y gastos con una estética lista para premios, diseñada para impulsar tu negocio.</Text>
+            <Text style={[styles.title, { color: palette.text }]}>Tu contabilidad, clara y al día</Text>
+              <Text style={[styles.subtitle, { color: palette.subtext }]}>Simplifica tu gestión diaria como taxista. Incomex facilita registros y te libera del caos de hojas y libros contables.</Text>
             </View>
 
             <View style={[styles.formCard, { backgroundColor: palette.cardBg, borderColor: palette.border }]}
             >
               <View style={[styles.modeSwitcher, { backgroundColor: palette.accentMuted, borderColor: palette.borderSoft }]}
               >
-                <ModeButton value="signIn" label="Iniciar sesión" />
-                <ModeButton value="signUp" label="Crear cuenta" />
+                <ModeButton
+                  value="signIn"
+                  label="Iniciar sesión"
+                  isActive={mode === 'signIn'}
+                  palette={palette}
+                  onPress={handleModeChange}
+                />
+                <ModeButton
+                  value="signUp"
+                  label="Crear cuenta"
+                  isActive={mode === 'signUp'}
+                  palette={palette}
+                  onPress={handleModeChange}
+                />
               </View>
 
               {feedback ? (
@@ -252,6 +279,7 @@ export const Auth = () => {
                 placeholder="nombre@estudio.com"
                 autoComplete="email"
                 keyboardType="email-address"
+                palette={palette}
               />
 
               <FormField
@@ -264,6 +292,7 @@ export const Auth = () => {
                 secureTextEntry={!showPassword}
                 returnKeyType={mode === 'signUp' ? 'next' : 'done'}
                 onSubmitEditing={mode === 'signUp' ? undefined : handleSubmit}
+                palette={palette}
                 trailing={
                   <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)}>
                     <Feather
@@ -286,6 +315,7 @@ export const Auth = () => {
                   secureTextEntry={!showConfirmPassword}
                   returnKeyType="done"
                   onSubmitEditing={handleSubmit}
+                  palette={palette}
                   trailing={
                     <TouchableOpacity onPress={() => setShowConfirmPassword((prev) => !prev)}>
                       <Feather
@@ -333,7 +363,7 @@ export const Auth = () => {
             </View>
 
             <View style={styles.footnote}>
-              <Text style={[styles.footnoteText, { color: palette.subtext }]}>Respaldado por Supabase • Arquitectura en tiempo real • Diseño listo para awards</Text>
+              <Text style={[styles.footnoteText, { color: palette.subtext }]}>Desarrollado por Roshan Gautam</Text>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -351,12 +381,12 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 28,
-    paddingBottom: 48,
+    paddingBottom: 32,
     flexGrow: 1,
   },
   hero: {
-    marginTop: 36,
-    marginBottom: 32,
+    marginTop: 16,
+    marginBottom: 16,
   },
   badge: {
     alignSelf: 'flex-start',
@@ -365,9 +395,9 @@ const styles = StyleSheet.create({
     gap: 6,
     borderRadius: 999,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    marginBottom: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 10,
   },
   badgeText: {
     fontSize: 12,
@@ -376,19 +406,19 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
-    fontSize: 34,
+    fontSize: 28,
     fontWeight: '800',
-    letterSpacing: 0.4,
-    lineHeight: 40,
+    letterSpacing: 0.2,
+    lineHeight: 32,
   },
   subtitle: {
-    marginTop: 12,
-    fontSize: 16,
-    lineHeight: 24,
+    marginTop: 6,
+    fontSize: 14,
+    lineHeight: 20,
   },
   formCard: {
     borderRadius: 28,
-    padding: 26,
+    padding: 22,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOpacity: 0.16,
@@ -421,15 +451,15 @@ const styles = StyleSheet.create({
   },
   feedback: {
     borderRadius: 18,
-    padding: 16,
-    marginBottom: 22,
+    padding: 12,
+    marginBottom: 18,
   },
   fieldContainer: {
-    marginBottom: 18,
+    marginBottom: 14,
   },
   fieldLabel: {
     fontSize: 12,
-    marginBottom: 8,
+    marginBottom: 6,
     fontWeight: '600',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
@@ -439,41 +469,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 18,
     borderWidth: 1,
-    paddingHorizontal: 18,
-    height: 58,
+    paddingHorizontal: 16,
+    height: 54,
   },
   inputIcon: {
-    marginRight: 12,
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
   },
   submitButton: {
     borderRadius: 18,
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 6,
+    marginTop: 4,
   },
   submitText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     letterSpacing: 0.3,
     textTransform: 'uppercase',
   },
   secondaryAction: {
-    marginTop: 18,
+    marginTop: 14,
     alignItems: 'center',
   },
   secondaryText: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
   },
   footnote: {
-    marginTop: 38,
+    marginTop: 28,
     alignItems: 'center',
   },
   footnoteText: {
