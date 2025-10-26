@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -12,6 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { Session } from '@supabase/supabase-js';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ArrowLeftIcon, ArrowRightIcon, ChartIcon, DollarIcon } from '../components/Icons';
 import { TableView } from '../components/TableView';
@@ -20,6 +21,8 @@ import { darkTheme, lightTheme } from '../theme/colors';
 import { formatNumber } from '../utils/formatNumber';
 import type { YearlySummary } from '../types';
 import { transactionsService } from '../services/transactionsService';
+import { useAwardPalette } from '../theme/awardPalette';
+import { AwardBackground } from '../components/AwardBackground';
 
 type ReportsScreenProps = {
   session: Session;
@@ -28,6 +31,29 @@ type ReportsScreenProps = {
 export const ReportsScreen = ({ session }: ReportsScreenProps) => {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
+  const palette = useAwardPalette();
+  const tableTheme = useMemo(
+    () => ({
+      ...theme,
+      surface: palette.surface,
+      surfaceVariant: palette.surfaceStrong,
+      text: palette.text,
+      textSecondary: palette.subtext,
+      primary: palette.accent,
+      success: palette.positive,
+      error: palette.negative,
+      border: palette.border,
+      tableHeader: palette.accentMuted,
+      tableHeaderText: palette.text,
+      tableRow: palette.surface,
+      tableRowAlt: palette.surfaceStrong,
+      tableBorder: palette.border,
+      tableTotal: palette.successBg,
+      tableHighlight: palette.highlight,
+      tableSummary: palette.surfaceStrong,
+    }),
+    [palette, theme],
+  );
 
   const [yearlySummary, setYearlySummary] = useState<YearlySummary | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -97,12 +123,12 @@ export const ReportsScreen = ({ session }: ReportsScreenProps) => {
   }, {} as Record<string, { month: string; card: number; cash: number; app: number; total: number; summary: number }>);
 
   const tableColumns = [
-    { key: 'date', label: 'Mes', width: 2, align: 'left' as const, headerColor: '#90C695' },
-    { key: 'card', label: 'Tarjeta', width: 2, align: 'right' as const, headerColor: '#90C695' },
-    { key: 'cash', label: 'Efectivo', width: 2, align: 'right' as const, headerColor: '#90C695' },
-    { key: 'app', label: 'App T3', width: 2, align: 'right' as const, headerColor: '#90C695' },
-    { key: 'total', label: 'Total', width: 2, align: 'right' as const, headerColor: '#90C695', backgroundColor: '#E8F5E9' },
-    { key: 'summary', label: 'Gastos', width: 2, align: 'right' as const, headerColor: '#90C695', backgroundColor: '#FFF9C4' },
+    { key: 'date', label: 'Mes', width: 2, align: 'left' as const, headerColor: palette.accent },
+    { key: 'card', label: 'Tarjeta', width: 2, align: 'right' as const, headerColor: palette.accent },
+    { key: 'cash', label: 'Efectivo', width: 2, align: 'right' as const, headerColor: palette.accent },
+    { key: 'app', label: 'App T3', width: 2, align: 'right' as const, headerColor: palette.accent },
+    { key: 'total', label: 'Total', width: 2, align: 'right' as const, headerColor: palette.accent, backgroundColor: palette.successBg },
+    { key: 'summary', label: 'Gastos', width: 2, align: 'right' as const, headerColor: palette.accent, backgroundColor: palette.errorBg },
   ];
 
   const tableData = monthlyData
@@ -135,62 +161,71 @@ export const ReportsScreen = ({ session }: ReportsScreenProps) => {
       };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.contentContainer}>
-      {isLoading ? (
-        <View style={styles.progressContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-        </View>
-      ) : null}
-      <View style={[styles.yearSelector, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-        <TouchableOpacity onPress={() => changeYear(-1)}>
-          <ArrowLeftIcon size={28} color={theme.text} />
-        </TouchableOpacity>
-
-        <View style={styles.yearInfo}>
-          <ChartIcon size={28} color={theme.primary} />
-          <Text style={[styles.yearText, { color: theme.text }]}>{selectedYear}</Text>
-        </View>
-
-        <TouchableOpacity onPress={() => changeYear(1)}>
-          <ArrowRightIcon size={28} color={theme.text} />
-        </TouchableOpacity>
-      </View>
-
-      <View style={[styles.totalCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-        <Text style={[styles.totalCardTitle, { color: theme.text }]}>Resumen Anual {selectedYear}</Text>
-        <View style={styles.totalCardContent}>
-          <View style={styles.totalRow}>
-            <View style={styles.totalLabelContainer}>
-              <DollarIcon size={20} color={theme.success} />
-              <Text style={[styles.totalLabel, { color: theme.text }]}>Total Ingresos:</Text>
+    <AwardBackground>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+        <ScrollView
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {isLoading ? (
+            <View style={styles.progressContainer}>
+              <ActivityIndicator size="large" color={palette.accent} />
             </View>
-            <Text style={[styles.totalIncome, { color: theme.success }]}>
-              {yearlySummary ? formatNumber(yearlySummary.totalIncome) : '0,00'} €
-            </Text>
-          </View>
-          <View style={[styles.divider, { backgroundColor: theme.border }]} />
-          <View style={styles.totalRow}>
-            <View style={styles.totalLabelContainer}>
-              <DollarIcon size={20} color={theme.error} />
-              <Text style={[styles.totalLabel, { color: theme.text }]}>Total Gastos:</Text>
-            </View>
-            <Text style={[styles.totalExpense, { color: theme.error }]}>
-              {yearlySummary ? formatNumber(yearlySummary.totalExpenses) : '0,00'} €
-            </Text>
-          </View>
-        </View>
-      </View>
+          ) : null}
 
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Desglose Mensual</Text>
-        <TableView
-          columns={tableColumns}
-          data={tableData}
-          showTotal
-          totalRow={totalRow}
-          emptyMessage="No hay datos para este año"
-        />
-      </View>
+          <View style={[styles.yearSelector, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+            <TouchableOpacity onPress={() => changeYear(-1)}>
+              <ArrowLeftIcon size={28} color={palette.text} />
+            </TouchableOpacity>
+
+            <View style={styles.yearInfo}>
+              <ChartIcon size={28} color={palette.accent} />
+              <Text style={[styles.yearText, { color: palette.text }]}>{selectedYear}</Text>
+            </View>
+
+            <TouchableOpacity onPress={() => changeYear(1)}>
+              <ArrowRightIcon size={28} color={palette.text} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={[styles.totalCard, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+            <Text style={[styles.totalCardTitle, { color: palette.text }]}>Resumen Anual {selectedYear}</Text>
+            <View style={styles.totalCardContent}>
+              <View style={styles.totalRow}>
+                <View style={styles.totalLabelContainer}>
+                  <DollarIcon size={20} color={palette.positive} />
+                  <Text style={[styles.totalLabel, { color: palette.text }]}>Total Ingresos:</Text>
+                </View>
+                <Text style={[styles.totalIncome, { color: palette.positive }]}>
+                  {yearlySummary ? formatNumber(yearlySummary.totalIncome) : '0,00'} €
+                </Text>
+              </View>
+              <View style={[styles.divider, { backgroundColor: palette.border }]} />
+              <View style={styles.totalRow}>
+                <View style={styles.totalLabelContainer}>
+                  <DollarIcon size={20} color={palette.negative} />
+                  <Text style={[styles.totalLabel, { color: palette.text }]}>Total Gastos:</Text>
+                </View>
+                <Text style={[styles.totalExpense, { color: palette.negative }]}>
+                  {yearlySummary ? formatNumber(yearlySummary.totalExpenses) : '0,00'} €
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: palette.text }]}>Desglose Mensual</Text>
+            <TableView
+              columns={tableColumns}
+              data={tableData}
+              showTotal
+              totalRow={totalRow}
+              emptyMessage="No hay datos para este año"
+              theme={tableTheme}
+            />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
 
       <Toast
         visible={toast.visible}
@@ -198,17 +233,18 @@ export const ReportsScreen = ({ session }: ReportsScreenProps) => {
         type={toast.type}
         onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
       />
-    </ScrollView>
+    </AwardBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   progressContainer: {
     alignItems: 'center',

@@ -15,6 +15,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import type { Session } from '@supabase/supabase-js';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   AppIcon,
@@ -29,6 +30,8 @@ import {
 import { Toast } from '../components/Toast';
 import { darkTheme, lightTheme } from '../theme/colors';
 import { transactionsService } from '../services/transactionsService';
+import { useAwardPalette } from '../theme/awardPalette';
+import { AwardBackground } from '../components/AwardBackground';
 
 const parseAmount = (text: string): number => {
   const cleaned = text.replace(/[^0-9,]/g, '').replace(',', '.');
@@ -49,6 +52,7 @@ type AddTransactionScreenProps = {
 export const AddTransactionScreen = ({ session }: AddTransactionScreenProps) => {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
+  const palette = useAwardPalette();
 
   const scrollViewRef = useRef<ScrollView>(null);
   const expenseInputRef = useRef<View>(null);
@@ -105,26 +109,28 @@ export const AddTransactionScreen = ({ session }: AddTransactionScreenProps) => 
   };
 
   return (
-    <>
-      <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: theme.background }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      >
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.container}
-          contentContainerStyle={styles.contentContainer}
-          keyboardShouldPersistTaps="handled"
+    <AwardBackground>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
-          <TouchableOpacity
-            style={[styles.dateSelector, { backgroundColor: theme.surface }]}
-            onPress={() => setShowDatePicker(true)}
+          <ScrollView
+            ref={scrollViewRef}
+            contentContainerStyle={styles.contentContainer}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <CalendarIcon size={24} color={theme.primary} />
+          <TouchableOpacity
+            style={[styles.dateSelector, { backgroundColor: palette.surface, borderColor: palette.border }]}
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.85}
+          >
+            <CalendarIcon size={24} color={palette.accent} />
             <View style={styles.dateTextContainer}>
-              <Text style={[styles.dateLabel, { color: theme.textSecondary }]}>Fecha de Transacción</Text>
-              <Text style={[styles.dateValue, { color: theme.text }]}>
+              <Text style={[styles.dateLabel, { color: palette.subtext }]}>Fecha de Transacción</Text>
+              <Text style={[styles.dateValue, { color: palette.text }]}>
                 {format(selectedDate, "d 'de' MMMM, yyyy", { locale: es })}
               </Text>
             </View>
@@ -134,19 +140,19 @@ export const AddTransactionScreen = ({ session }: AddTransactionScreenProps) => 
             <DateTimePicker value={selectedDate} mode="date" display="default" onChange={onDateChange} />
           ) : null}
 
-          <View style={[styles.inputsContainer, { backgroundColor: theme.surface }]}>
+          <View style={[styles.inputsContainer, { backgroundColor: palette.surface, borderColor: palette.border }]}>
             <View style={styles.sectionHeader}>
-              <TrendUpIcon size={20} color={theme.success} />
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>Ingresos del Día</Text>
+              <TrendUpIcon size={20} color={palette.positive} />
+              <Text style={[styles.sectionTitle, { color: palette.text }]}>Ingresos del Día</Text>
             </View>
 
             <View style={styles.inputRow}>
-              <CreditCardIcon size={20} color={theme.card} />
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Tarjeta</Text>
+              <CreditCardIcon size={20} color={palette.accent} />
+              <Text style={[styles.inputLabel, { color: palette.text }]}>Tarjeta</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.surfaceVariant, borderColor: theme.border, color: theme.success }]}
+                style={[styles.input, { backgroundColor: palette.surfaceStrong, borderColor: palette.border, color: palette.positive }]}
                 placeholder="0.00"
-                placeholderTextColor={theme.textTertiary}
+                placeholderTextColor={palette.placeholder}
                 keyboardType="decimal-pad"
                 value={cardAmount}
                 onChangeText={setCardAmount}
@@ -154,12 +160,12 @@ export const AddTransactionScreen = ({ session }: AddTransactionScreenProps) => 
             </View>
 
             <View style={styles.inputRow}>
-              <CashIcon size={20} color={theme.cash} />
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Efectivo</Text>
+              <CashIcon size={20} color={palette.positive} />
+              <Text style={[styles.inputLabel, { color: palette.text }]}>Efectivo</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.surfaceVariant, borderColor: theme.border, color: theme.success }]}
+                style={[styles.input, { backgroundColor: palette.surfaceStrong, borderColor: palette.border, color: palette.positive }]}
                 placeholder="0.00"
-                placeholderTextColor={theme.textTertiary}
+                placeholderTextColor={palette.placeholder}
                 keyboardType="decimal-pad"
                 value={cashAmount}
                 onChangeText={setCashAmount}
@@ -167,12 +173,12 @@ export const AddTransactionScreen = ({ session }: AddTransactionScreenProps) => 
             </View>
 
             <View style={styles.inputRow}>
-              <AppIcon size={20} color={theme.app} />
-              <Text style={[styles.inputLabel, { color: theme.text }]}>APP T3</Text>
+              <AppIcon size={20} color={palette.highlight} />
+              <Text style={[styles.inputLabel, { color: palette.text }]}>APP T3</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.surfaceVariant, borderColor: theme.border, color: theme.success }]}
+                style={[styles.input, { backgroundColor: palette.surfaceStrong, borderColor: palette.border, color: palette.positive }]}
                 placeholder="0.00"
-                placeholderTextColor={theme.textTertiary}
+                placeholderTextColor={palette.placeholder}
                 keyboardType="decimal-pad"
                 value={appAmount}
                 onChangeText={setAppAmount}
@@ -180,24 +186,27 @@ export const AddTransactionScreen = ({ session }: AddTransactionScreenProps) => 
             </View>
           </View>
 
-          <View ref={expenseInputRef} style={[styles.inputsContainer, { backgroundColor: theme.surface }]}>
+          <View
+            ref={expenseInputRef}
+            style={[styles.inputsContainer, { backgroundColor: palette.surface, borderColor: palette.border }]}
+          >
             <View style={styles.sectionHeader}>
-              <WalletIcon size={20} color={theme.error} />
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>Gastos del Día</Text>
+              <WalletIcon size={20} color={palette.negative} />
+              <Text style={[styles.sectionTitle, { color: palette.text }]}>Gastos del Día</Text>
             </View>
 
             <View style={styles.inputRow}>
-              <TrendDownIcon size={20} color={theme.error} />
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Gastos</Text>
+              <TrendDownIcon size={20} color={palette.negative} />
+              <Text style={[styles.inputLabel, { color: palette.text }]}>Gastos</Text>
               <TextInput
                 ref={(node) => {
                   if (node) {
                     // noop placeholder for future logic
                   }
                 }}
-                style={[styles.input, { backgroundColor: theme.surfaceVariant, borderColor: theme.border, color: theme.error }]}
+                style={[styles.input, { backgroundColor: palette.surfaceStrong, borderColor: palette.border, color: palette.negative }]}
                 placeholder="0.00"
-                placeholderTextColor={theme.textTertiary}
+                placeholderTextColor={palette.placeholder}
                 keyboardType="decimal-pad"
                 value={expenseAmount}
                 onChangeText={setExpenseAmount}
@@ -225,15 +234,17 @@ export const AddTransactionScreen = ({ session }: AddTransactionScreenProps) => 
           </View>
 
           <TouchableOpacity
-            style={[styles.saveButton, { backgroundColor: theme.primary }]}
+            style={[styles.saveButton, { backgroundColor: palette.accent, shadowColor: palette.accent }]}
             onPress={handleSaveTransactions}
             disabled={isSaving}
+            activeOpacity={0.85}
           >
             <SaveIcon size={20} color="#FFFFFF" />
             <Text style={styles.saveButtonText}>{isSaving ? 'Guardando...' : 'Guardar Transacciones'}</Text>
           </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
 
       <Toast
         visible={toast.visible}
@@ -241,17 +252,21 @@ export const AddTransactionScreen = ({ session }: AddTransactionScreenProps) => 
         type={toast.type}
         onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
       />
-    </>
+    </AwardBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   dateSelector: {
     flexDirection: 'row',
@@ -265,6 +280,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
   },
   dateTextContainer: {
     flex: 1,
@@ -288,6 +304,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -332,6 +349,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    marginTop: 8,
   },
   saveButtonText: {
     fontSize: 16,

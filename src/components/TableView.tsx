@@ -55,7 +55,7 @@ export const TableView: FunctionComponent<TableViewProps> = ({
       : rowData?.backgroundColor ?? column.backgroundColor ?? theme.surface;
 
     const textColor = isHeader
-      ? theme.tableHeaderText
+      ? column.headerColor ?? theme.tableHeaderText
       : isTotal
       ? theme.text
       : rowData?.textColor ?? theme.text;

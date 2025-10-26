@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -14,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { Session } from '@supabase/supabase-js';
 import { addMonths, eachDayOfInterval, endOfMonth, format, isSameDay, startOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   AppIcon,
@@ -23,8 +24,6 @@ import {
   CashIcon,
   CreditCardIcon,
   TableIcon,
-  TrendDownIcon,
-  TrendUpIcon,
   WalletIcon,
 } from '../components/Icons';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -34,6 +33,8 @@ import { darkTheme, lightTheme } from '../theme/colors';
 import { formatNumber } from '../utils/formatNumber';
 import type { DailySummary, Transaction } from '../types';
 import { transactionsService } from '../services/transactionsService';
+import { useAwardPalette } from '../theme/awardPalette';
+import { AwardBackground } from '../components/AwardBackground';
 
 type DailySummaryScreenProps = {
   session: Session;
@@ -42,6 +43,29 @@ type DailySummaryScreenProps = {
 export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
+  const palette = useAwardPalette();
+  const tableTheme = useMemo(
+    () => ({
+      ...theme,
+      surface: palette.surface,
+      surfaceVariant: palette.surfaceStrong,
+      text: palette.text,
+      textSecondary: palette.subtext,
+      primary: palette.accent,
+      success: palette.positive,
+      error: palette.negative,
+      border: palette.border,
+      tableHeader: palette.accentMuted,
+      tableHeaderText: palette.text,
+      tableRow: palette.surface,
+      tableRowAlt: palette.surfaceStrong,
+      tableBorder: palette.border,
+      tableTotal: palette.successBg,
+      tableHighlight: palette.highlight,
+      tableSummary: palette.surfaceStrong,
+    }),
+    [palette, theme],
+  );
 
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -126,20 +150,23 @@ export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
     return (
       <Modal visible={showCalendar} transparent animationType="fade" onRequestClose={() => setShowCalendar(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowCalendar(false)}>
-          <View style={[styles.calendarContainer, { backgroundColor: theme.surface }]} onStartShouldSetResponder={() => true}>
+          <View
+            style={[styles.calendarContainer, { backgroundColor: palette.surface, borderColor: palette.border }]}
+            onStartShouldSetResponder={() => true}
+          >
             <View style={styles.calendarHeader}>
               <TouchableOpacity onPress={() => setCalendarMonth(subMonths(calendarMonth, 1))}>
-                <ArrowLeftIcon size={24} color={theme.text} />
+                <ArrowLeftIcon size={24} color={palette.text} />
               </TouchableOpacity>
-              <Text style={[styles.calendarTitle, { color: theme.text }]}> {format(calendarMonth, 'MMMM yyyy', { locale: es })}</Text>
+              <Text style={[styles.calendarTitle, { color: palette.text }]}>{format(calendarMonth, 'MMMM yyyy', { locale: es })}</Text>
               <TouchableOpacity onPress={() => setCalendarMonth(addMonths(calendarMonth, 1))}>
-                <ArrowRightIcon size={24} color={theme.text} />
+                <ArrowRightIcon size={24} color={palette.text} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.weekdayRow}>
               {['D', 'L', 'M', 'X', 'J', 'V', 'S'].map((day, index) => (
-                <Text key={index} style={[styles.weekdayText, { color: theme.textSecondary }]}>
+                <Text key={index} style={[styles.weekdayText, { color: palette.subtext }]}>
                   {day}
                 </Text>
               ))}
@@ -159,16 +186,16 @@ export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
                     key={day.toISOString()}
                     style={[
                       styles.dayCell,
-                      isSelected && { backgroundColor: theme.primary },
-                      isToday && !isSelected && { borderWidth: 2, borderColor: theme.primary },
+                      isSelected && { backgroundColor: palette.highlight },
+                      isToday && !isSelected && { borderWidth: 2, borderColor: palette.accent },
                     ]}
                     onPress={() => selectDate(day)}
                   >
                     <Text
                       style={[
                         styles.dayText,
-                        { color: isSelected ? '#FFFFFF' : theme.text },
-                        isToday && !isSelected && { color: theme.primary, fontWeight: '700' },
+                        { color: isSelected ? '#FFFFFF' : palette.text },
+                        isToday && !isSelected && { color: palette.accent, fontWeight: '700' },
                       ]}
                     >
                       {format(day, 'd')}
@@ -190,12 +217,12 @@ export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
   };
 
   const tableColumns = [
-    { key: 'date', label: 'Día', width: 2, align: 'left' as const, headerColor: '#90C695' },
-    { key: 'card', label: 'Tarjeta', width: 2, align: 'right' as const, headerColor: '#90C695' },
-    { key: 'cash', label: 'Efectivo', width: 2, align: 'right' as const, headerColor: '#90C695' },
-    { key: 'app', label: 'App T3', width: 2, align: 'right' as const, headerColor: '#90C695' },
-    { key: 'total', label: 'Total', width: 2, align: 'right' as const, headerColor: '#90C695', backgroundColor: '#E8F5E9' },
-    { key: 'summary', label: 'Gastos', width: 2, align: 'right' as const, headerColor: '#90C695', backgroundColor: '#FFF9C4' },
+    { key: 'date', label: 'Día', width: 2, align: 'left' as const, headerColor: palette.accent },
+    { key: 'card', label: 'Tarjeta', width: 2, align: 'right' as const, headerColor: palette.accent },
+    { key: 'cash', label: 'Efectivo', width: 2, align: 'right' as const, headerColor: palette.accent },
+    { key: 'app', label: 'App T3', width: 2, align: 'right' as const, headerColor: palette.accent },
+    { key: 'total', label: 'Total', width: 2, align: 'right' as const, headerColor: palette.accent, backgroundColor: palette.successBg },
+    { key: 'summary', label: 'Gastos', width: 2, align: 'right' as const, headerColor: palette.accent, backgroundColor: palette.errorBg },
   ];
 
   const tableData = summary
@@ -207,7 +234,7 @@ export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
           app: summary.incomeByMethod.app > 0 ? formatNumber(summary.incomeByMethod.app) : '0',
           total: formatNumber(summary.totalIncome),
           summary: summary.totalExpenses > 0 ? formatNumber(summary.totalExpenses) : '0',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: palette.surfaceStrong,
         },
       ]
     : [];
@@ -231,140 +258,149 @@ export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
       };
 
   return (
-    <>
-      <ScrollView
-        style={[styles.container, { backgroundColor: theme.background }]}
-        contentContainerStyle={styles.contentContainer}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {isLoading && !refreshing ? (
-          <View style={styles.progressContainer}>
-            <ActivityIndicator size="large" color={theme.primary} />
-          </View>
-        ) : null}
-        {renderCalendar()}
-
-        <TouchableOpacity
-          style={[styles.dateSelector, { backgroundColor: theme.surface, borderColor: theme.border }]}
-          onPress={() => setShowCalendar(true)}
+    <AwardBackground>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+        <ScrollView
+          contentContainerStyle={styles.contentContainer}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <CalendarIcon size={24} color={theme.primary} />
-          <View style={styles.dateTextContainer}>
-            <Text style={[styles.dateText, { color: theme.text }]}> {format(selectedDate, "d 'de' MMMM yyyy", { locale: es })}</Text>
-            {summary?.dayOfWeek ? (
-              <Text style={[styles.sectionTitle, { color: theme.textSecondary, fontSize: 14 }]}>{summary.dayOfWeek}</Text>
-            ) : null}
-          </View>
-          <TableIcon size={24} color={theme.textSecondary} />
-        </TouchableOpacity>
-
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Resumen del Día</Text>
-
-        <TableView
-          columns={tableColumns}
-          data={tableData}
-          showTotal
-          totalRow={totalRow}
-          emptyMessage="No hay transacciones registradas este día"
-        />
-
-        {summary && (summary.totalIncome > 0 || summary.totalExpenses > 0) ? (
-          <View style={[styles.detailsContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Text style={[styles.detailsTitle, { color: theme.text }]}>Desglose Detallado</Text>
-
-            <View style={styles.detailsBox}>
-              <View style={styles.detailsRow}>
-                <View style={styles.detailsLabelContainer}>
-                  <CreditCardIcon size={18} color={theme.card} />
-                  <Text style={[styles.detailsLabel, { color: theme.text }]}>Ingresos Tarjeta:</Text>
-                </View>
-                <Text style={[styles.detailsValueIncome, { color: theme.success }]}>
-                  {formatNumber(summary.incomeByMethod.card)} €
-                </Text>
-              </View>
-              <View style={styles.detailsRow}>
-                <View style={styles.detailsLabelContainer}>
-                  <CashIcon size={18} color={theme.cash} />
-                  <Text style={[styles.detailsLabel, { color: theme.text }]}>Ingresos Efectivo:</Text>
-                </View>
-                <Text style={[styles.detailsValueIncome, { color: theme.success }]}>
-                  {formatNumber(summary.incomeByMethod.cash)} €
-                </Text>
-              </View>
-              <View style={styles.detailsRow}>
-                <View style={styles.detailsLabelContainer}>
-                  <AppIcon size={18} color={theme.app} />
-                  <Text style={[styles.detailsLabel, { color: theme.text }]}>Ingresos App:</Text>
-                </View>
-                <Text style={[styles.detailsValueIncome, { color: theme.success }]}>
-                  {formatNumber(summary.incomeByMethod.app)} €
-                </Text>
-              </View>
-              <View style={[styles.detailsDivider, { backgroundColor: theme.border }]} />
-              <View style={styles.detailsRow}>
-                <Text style={[styles.detailsLabelBold, { color: theme.text }]}>Total Ingresos:</Text>
-                <Text style={[styles.detailsValueIncomeBold, { color: theme.success }]}>
-                  {formatNumber(summary.totalIncome)} €
-                </Text>
-              </View>
+          {isLoading && !refreshing ? (
+            <View style={styles.progressContainer}>
+              <ActivityIndicator size="large" color={palette.accent} />
             </View>
+          ) : null}
+          {renderCalendar()}
 
-            {summary.totalExpenses > 0 ? (
-              <View style={[styles.detailsBox, { marginTop: 12 }]}> 
+          <TouchableOpacity
+            style={[styles.dateSelector, { backgroundColor: palette.surface, borderColor: palette.border }]}
+            onPress={() => setShowCalendar(true)}
+          >
+            <CalendarIcon size={24} color={palette.accent} />
+            <View style={styles.dateTextContainer}>
+              <Text style={[styles.dateText, { color: palette.text }]}>{format(selectedDate, "d 'de' MMMM yyyy", { locale: es })}</Text>
+              {summary?.dayOfWeek ? (
+                <Text style={[styles.sectionTitle, { color: palette.subtext, fontSize: 14 }]}>{summary.dayOfWeek}</Text>
+              ) : null}
+            </View>
+            <TableIcon size={24} color={palette.subtext} />
+          </TouchableOpacity>
+
+          <Text style={[styles.sectionTitle, { color: palette.text }]}>Resumen del Día</Text>
+
+          <TableView
+            columns={tableColumns}
+            data={tableData}
+            showTotal
+            totalRow={totalRow}
+            emptyMessage="No hay transacciones registradas este día"
+            theme={tableTheme}
+          />
+
+          {summary && (summary.totalIncome > 0 || summary.totalExpenses > 0) ? (
+            <View style={[styles.detailsContainer, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+              <Text style={[styles.detailsTitle, { color: palette.text }]}>Desglose Detallado</Text>
+
+              <View style={[styles.detailsBox, { backgroundColor: palette.surfaceStrong, borderColor: palette.border }]}>
                 <View style={styles.detailsRow}>
                   <View style={styles.detailsLabelContainer}>
-                    <WalletIcon size={18} color={theme.error} />
-                    <Text style={[styles.detailsLabel, { color: theme.text }]}>Gastos Varios:</Text>
+                    <CreditCardIcon size={18} color={theme.card} />
+                    <Text style={[styles.detailsLabel, { color: palette.text }]}>Ingresos Tarjeta:</Text>
                   </View>
-                  <Text style={[styles.detailsValueExpense, { color: theme.error }]}>
-                    {formatNumber(summary.totalExpenses)} €
+                  <Text style={[styles.detailsValueIncome, { color: palette.positive }]}>
+                    {formatNumber(summary.incomeByMethod.card)} €
+                  </Text>
+                </View>
+                <View style={styles.detailsRow}>
+                  <View style={styles.detailsLabelContainer}>
+                    <CashIcon size={18} color={theme.cash} />
+                    <Text style={[styles.detailsLabel, { color: palette.text }]}>Ingresos Efectivo:</Text>
+                  </View>
+                  <Text style={[styles.detailsValueIncome, { color: palette.positive }]}>
+                    {formatNumber(summary.incomeByMethod.cash)} €
+                  </Text>
+                </View>
+                <View style={styles.detailsRow}>
+                  <View style={styles.detailsLabelContainer}>
+                    <AppIcon size={18} color={theme.app} />
+                    <Text style={[styles.detailsLabel, { color: palette.text }]}>Ingresos App:</Text>
+                  </View>
+                  <Text style={[styles.detailsValueIncome, { color: palette.positive }]}>
+                    {formatNumber(summary.incomeByMethod.app)} €
+                  </Text>
+                </View>
+                <View style={[styles.detailsDivider, { backgroundColor: palette.border }]} />
+                <View style={styles.detailsRow}>
+                  <Text style={[styles.detailsLabelBold, { color: palette.text }]}>Total Ingresos:</Text>
+                  <Text style={[styles.detailsValueIncomeBold, { color: palette.positive }]}>
+                    {formatNumber(summary.totalIncome)} €
                   </Text>
                 </View>
               </View>
-            ) : null}
-          </View>
-        ) : null}
 
-        {summary && summary.transactions.length > 0 ? (
-          <View style={[styles.transactionsContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Text style={[styles.detailsTitle, { color: theme.text }]}>Transacciones del Día</Text>
-            {summary.transactions.map((transaction) => {
-              const isIncome = transaction.type === 'income';
-              const icon = transaction.method === 'card'
-                ? <CreditCardIcon size={18} color={isIncome ? theme.card : theme.error} />
-                : transaction.method === 'cash'
-                ? <CashIcon size={18} color={isIncome ? theme.cash : theme.error} />
-                : transaction.method === 'app'
-                ? <AppIcon size={18} color={isIncome ? theme.app : theme.error} />
-                : <WalletIcon size={18} color={theme.error} />;
-
-              return (
-                <View key={transaction.id} style={[styles.transactionItem, { borderColor: theme.border }]}> 
-                  <View style={styles.transactionInfo}>
-                    {icon}
-                    <View style={styles.transactionDetails}>
-                      <Text style={[styles.transactionType, { color: theme.text }]}>
-                        {isIncome ? 'Ingreso' : 'Gasto'}{transaction.method ? ` - ${transaction.method.toUpperCase()}` : ''}
-                      </Text>
-                      <Text style={[styles.transactionAmount, { color: isIncome ? theme.success : theme.error }]}>
-                        {formatNumber(transaction.amount)} €
-                      </Text>
+              {summary.totalExpenses > 0 ? (
+                <View
+                  style={[styles.detailsBox, { marginTop: 12, backgroundColor: palette.surfaceStrong, borderColor: palette.border }]}
+                >
+                  <View style={styles.detailsRow}>
+                    <View style={styles.detailsLabelContainer}>
+                      <WalletIcon size={18} color={palette.negative} />
+                      <Text style={[styles.detailsLabel, { color: palette.text }]}>Gastos Varios:</Text>
                     </View>
-                  </View>
-                  <View style={styles.transactionActions}>
-                    <TouchableOpacity
-                      style={[styles.actionButton, { backgroundColor: theme.error }]}
-                      onPress={() => handleDeleteTransaction(transaction)}
-                    >
-                      <Text style={[styles.actionButtonText, { color: '#FFFFFF' }]}>Eliminar</Text>
-                    </TouchableOpacity>
+                    <Text style={[styles.detailsValueExpense, { color: palette.negative }]}>
+                      {formatNumber(summary.totalExpenses)} €
+                    </Text>
                   </View>
                 </View>
-              );
-            })}
-          </View>
-        ) : null}
-      </ScrollView>
+              ) : null}
+            </View>
+          ) : null}
+
+          {summary && summary.transactions.length > 0 ? (
+            <View style={[styles.transactionsContainer, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+              <Text style={[styles.detailsTitle, { color: palette.text }]}>Transacciones del Día</Text>
+              {summary.transactions.map((transaction) => {
+                const isIncome = transaction.type === 'income';
+                const icon = transaction.method === 'card'
+                  ? <CreditCardIcon size={18} color={isIncome ? palette.accent : palette.negative} />
+                  : transaction.method === 'cash'
+                  ? <CashIcon size={18} color={isIncome ? palette.positive : palette.negative} />
+                  : transaction.method === 'app'
+                  ? <AppIcon size={18} color={isIncome ? palette.highlight : palette.negative} />
+                  : <WalletIcon size={18} color={palette.negative} />;
+
+                return (
+                  <View
+                    key={transaction.id}
+                    style={[styles.transactionItem, { borderColor: palette.border, backgroundColor: palette.surfaceStrong }]}
+                  >
+                    <View style={styles.transactionInfo}>
+                      {icon}
+                      <View style={styles.transactionDetails}>
+                        <Text style={[styles.transactionType, { color: palette.text }]}>
+                          {isIncome ? 'Ingreso' : 'Gasto'}{transaction.method ? ` - ${transaction.method.toUpperCase()}` : ''}
+                        </Text>
+                        <Text style={[styles.transactionAmount, { color: isIncome ? palette.positive : palette.negative }]}>
+                          {formatNumber(transaction.amount)} €
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.transactionActions}>
+                      <TouchableOpacity
+                        style={[styles.actionButton, { backgroundColor: palette.negative }]}
+                        onPress={() => handleDeleteTransaction(transaction)}
+                      >
+                        <Text style={[styles.actionButtonText, { color: '#FFFFFF' }]}>Eliminar</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
+        </ScrollView>
+      </SafeAreaView>
 
       <ConfirmDialog
         visible={deleteDialog.visible}
@@ -378,7 +414,7 @@ export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
         cancelText="Cancelar"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialog({ visible: false, transaction: null })}
-        confirmColor={theme.error}
+        confirmColor={palette.negative}
       />
 
       <Toast
@@ -387,17 +423,18 @@ export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
         type={toast.type}
         onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
       />
-    </>
+    </AwardBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   progressContainer: {
     alignItems: 'center',
@@ -450,7 +487,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   detailsBox: {
-    marginVertical: 4,
+    marginVertical: 8,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
   },
   detailsRow: {
     flexDirection: 'row',
@@ -557,7 +597,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
   },
   transactionInfo: {
     flexDirection: 'row',

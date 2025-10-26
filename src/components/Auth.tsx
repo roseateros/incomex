@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
@@ -12,60 +12,19 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  useColorScheme,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { supabase } from '../lib/supabase';
+import { useAwardPalette } from '../theme/awardPalette';
+import { AwardBackground } from './AwardBackground';
 
 type Mode = 'signIn' | 'signUp';
-
-type FeedbackState = {
-  type: 'success' | 'error';
-  text: string;
-} | null;
+type FeedbackState = { type: 'success' | 'error'; text: string } | null;
 
 export const Auth = () => {
-  const colorScheme = useColorScheme();
-  const palette = useMemo(() => {
-    if (colorScheme === 'dark') {
-      return {
-        text: '#F8FAFC',
-        subtext: '#94A3B8',
-        accent: '#38BDF8',
-        accentSoft: 'rgba(56, 189, 248, 0.12)',
-        highlight: '#6366F1',
-        backgroundCard: 'rgba(15, 23, 42, 0.82)',
-        border: 'rgba(148, 163, 184, 0.35)',
-        inputBg: 'rgba(15, 23, 42, 0.7)',
-        placeholder: 'rgba(148, 163, 184, 0.7)',
-        disabled: 'rgba(148, 163, 184, 0.3)',
-        successBg: 'rgba(34, 197, 94, 0.12)',
-        successText: '#4ADE80',
-        errorBg: 'rgba(248, 113, 113, 0.12)',
-        errorText: '#F87171',
-      } as const;
-    }
-
-    return {
-      text: '#0F172A',
-      subtext: '#475569',
-      accent: '#2563EB',
-      accentSoft: 'rgba(37, 99, 235, 0.12)',
-      highlight: '#7C3AED',
-      backgroundCard: 'rgba(255, 255, 255, 0.9)',
-      border: 'rgba(148, 163, 184, 0.25)',
-      inputBg: 'rgba(248, 250, 252, 0.96)',
-      placeholder: '#94A3B8',
-      disabled: 'rgba(148, 163, 184, 0.35)',
-      successBg: 'rgba(16, 185, 129, 0.12)',
-      successText: '#047857',
-      errorBg: 'rgba(239, 68, 68, 0.12)',
-      errorText: '#B91C1C',
-    } as const;
-  }, [colorScheme]);
+  const palette = useAwardPalette();
 
   const [mode, setMode] = useState<Mode>('signIn');
   const [email, setEmail] = useState('');
@@ -73,6 +32,8 @@ export const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackState>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (mode === 'signIn') {
@@ -99,17 +60,10 @@ export const Auth = () => {
     };
   }, []);
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const passwordValid = password.trim().length >= 6;
   const confirmValid = mode === 'signUp' ? password === confirmPassword && confirmPassword.trim().length >= 6 : true;
   const canSubmit = !loading && emailValid && passwordValid && confirmValid;
-
-  const gradientColors = colorScheme === 'dark'
-    ? ['#020617', '#0B1120', '#1E1B4B']
-    : ['#EFF6FF', '#FAFAFF', '#E0F2FE'];
 
   const handleSubmit = async () => {
     if (!emailValid) {
@@ -136,7 +90,7 @@ export const Auth = () => {
         if (error) {
           throw error;
         }
-        setFeedback({ type: 'success', text: '¡Bienvenido de nuevo!' });
+        setFeedback({ type: 'success', text: '¡Bienvenido de nuevo! Tu panel te espera.' });
       } else {
         const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
         if (error) {
@@ -144,9 +98,9 @@ export const Auth = () => {
         }
 
         if (data.session) {
-          setFeedback({ type: 'success', text: 'Cuenta creada correctamente. Ya puedes empezar.' });
+          setFeedback({ type: 'success', text: 'Cuenta creada. Vamos a diseñar tu ritmo financiero.' });
         } else {
-          setFeedback({ type: 'success', text: 'Hemos enviado un correo de verificación. Revisa tu bandeja de entrada.' });
+          setFeedback({ type: 'success', text: 'Te enviamos un correo de verificación para activar tu cuenta.' });
         }
 
         setMode('signIn');
@@ -164,13 +118,27 @@ export const Auth = () => {
     return (
       <TouchableOpacity
         accessibilityRole="button"
+        activeOpacity={0.85}
         onPress={() => {
           setMode(value);
           setFeedback(null);
         }}
-        style={[styles.modeButton, isActive && { backgroundColor: palette.accent }]}
+        style={[
+          styles.modeButton,
+          {
+            backgroundColor: isActive ? palette.highlight : 'transparent',
+            shadowOpacity: isActive ? 0.18 : 0,
+          },
+        ]}
       >
-        <Text style={[styles.modeLabel, { color: isActive ? '#0F172A' : palette.subtext }]}>{label}</Text>
+        <Text
+          style={[
+            styles.modeLabel,
+            { color: isActive ? '#FDF4FF' : palette.subtext },
+          ]}
+        >
+          {label}
+        </Text>
       </TouchableOpacity>
     );
   };
@@ -200,11 +168,15 @@ export const Auth = () => {
     autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
     returnKeyType?: 'next' | 'done';
     onSubmitEditing?: () => void;
-  trailing?: ReactNode;
+    trailing?: ReactNode;
   }) => (
     <View style={styles.fieldContainer}>
       <Text style={[styles.fieldLabel, { color: palette.subtext }]}>{label}</Text>
-      <View style={[styles.inputWrapper, { backgroundColor: palette.inputBg, borderColor: palette.border }]}
+      <View
+        style={[
+          styles.inputWrapper,
+          { backgroundColor: palette.inputBg, borderColor: palette.border },
+        ]}
       >
         <Feather name={icon} size={20} color={palette.subtext} style={styles.inputIcon} />
         <TextInput
@@ -226,23 +198,31 @@ export const Auth = () => {
   );
 
   return (
-    <LinearGradient colors={gradientColors} style={styles.gradient}>
+    <AwardBackground>
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.flex}
         >
           <ScrollView
             contentContainerStyle={styles.content}
-            keyboardShouldPersistTaps="handled"
+            keyboardShouldPersistTaps="always"
           >
-            <View style={styles.header}>
-              <Text style={[styles.title, { color: palette.text }]}>Incomex</Text>
-              <Text style={[styles.subtitle, { color: palette.subtext }]}>Gestiona tus ingresos diarios con una experiencia de alto diseño.</Text>
+            <View style={styles.hero}>
+              <View style={[styles.badge, { backgroundColor: palette.badgeBg, borderColor: palette.borderSoft }]}
+              >
+                <Feather name="star" size={14} color={palette.accent} />
+                <Text style={[styles.badgeText, { color: palette.accent }]}>Incomex Studio</Text>
+              </View>
+
+              <Text style={[styles.title, { color: palette.text }]}>Dinero que fluye con diseño de autor</Text>
+              <Text style={[styles.subtitle, { color: palette.subtext }]}>Supervisa ingresos y gastos con una estética lista para premios, diseñada para impulsar tu negocio.</Text>
             </View>
 
-            <View style={[styles.card, { backgroundColor: palette.backgroundCard, borderColor: palette.border }]}>
-              <View style={[styles.modeSwitcher, { backgroundColor: palette.accentSoft, borderColor: palette.border }]}>
+            <View style={[styles.formCard, { backgroundColor: palette.cardBg, borderColor: palette.border }]}
+            >
+              <View style={[styles.modeSwitcher, { backgroundColor: palette.accentMuted, borderColor: palette.borderSoft }]}
+              >
                 <ModeButton value="signIn" label="Iniciar sesión" />
                 <ModeButton value="signUp" label="Crear cuenta" />
               </View>
@@ -265,11 +245,11 @@ export const Auth = () => {
               ) : null}
 
               <FormField
-                label="Correo electrónico"
+                label="Correo profesional"
                 icon="mail"
                 value={email}
                 onChangeText={setEmail}
-                placeholder="nombre@empresa.com"
+                placeholder="nombre@estudio.com"
                 autoComplete="email"
                 keyboardType="email-address"
               />
@@ -330,7 +310,7 @@ export const Auth = () => {
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <Text style={styles.submitText}>
-                    {mode === 'signIn' ? 'Entrar a tu panel' : 'Crear cuenta'}
+                    {mode === 'signIn' ? 'Entrar a mi flujo' : 'Diseñar mi cuenta'}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -341,23 +321,28 @@ export const Auth = () => {
                   setFeedback(null);
                 }}
                 style={styles.secondaryAction}
+                activeOpacity={0.7}
               >
-                <Text style={[styles.secondaryText, { color: palette.subtext }]}> 
-                  {mode === 'signIn' ? '¿Aún no tienes cuenta? Crea una en segundos.' : '¿Ya tienes una cuenta? Inicia sesión.'}
+                <Text style={[styles.secondaryText, { color: palette.subtext }]}
+                >
+                  {mode === 'signIn'
+                    ? '¿Eres nuevo? Crea una cuenta en segundos.'
+                    : '¿Ya formas parte de Incomex? Vuelve a iniciar sesión.'}
                 </Text>
               </TouchableOpacity>
+            </View>
+
+            <View style={styles.footnote}>
+              <Text style={[styles.footnoteText, { color: palette.subtext }]}>Respaldado por Supabase • Arquitectura en tiempo real • Diseño listo para awards</Text>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </LinearGradient>
+    </AwardBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
   safeArea: {
     flex: 1,
   },
@@ -365,73 +350,97 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 28,
     paddingBottom: 48,
     flexGrow: 1,
-    justifyContent: 'center',
   },
-  header: {
+  hero: {
+    marginTop: 36,
     marginBottom: 32,
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 18,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   title: {
     fontSize: 34,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
+    lineHeight: 40,
   },
   subtitle: {
-    marginTop: 8,
-    fontSize: 15,
-    lineHeight: 22,
+    marginTop: 12,
+    fontSize: 16,
+    lineHeight: 24,
   },
-  card: {
-    borderRadius: 24,
-    padding: 24,
+  formCard: {
+    borderRadius: 28,
+    padding: 26,
     borderWidth: 1,
     shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
+    shadowOpacity: 0.16,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 16 },
+    elevation: 10,
   },
   modeSwitcher: {
     flexDirection: 'row',
-    padding: 4,
-    borderRadius: 18,
+    padding: 6,
+    borderRadius: 20,
     borderWidth: 1,
-    marginBottom: 24,
+    gap: 4,
+    marginBottom: 26,
   },
   modeButton: {
     flex: 1,
-    borderRadius: 14,
+    borderRadius: 16,
     paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 18,
   },
   modeLabel: {
     fontSize: 14,
     fontWeight: '700',
+    letterSpacing: 0.2,
   },
   feedback: {
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 20,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 22,
   },
   fieldContainer: {
     marginBottom: 18,
   },
   fieldLabel: {
-    fontSize: 13,
+    fontSize: 12,
     marginBottom: 8,
     fontWeight: '600',
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
-    paddingHorizontal: 16,
-    height: 54,
+    paddingHorizontal: 18,
+    height: 58,
   },
   inputIcon: {
     marginRight: 12,
@@ -442,17 +451,18 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   submitButton: {
-    borderRadius: 16,
+    borderRadius: 18,
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    marginTop: 6,
   },
   submitText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   secondaryAction: {
     marginTop: 18,
@@ -460,5 +470,15 @@ const styles = StyleSheet.create({
   },
   secondaryText: {
     fontSize: 13,
+    lineHeight: 18,
+  },
+  footnote: {
+    marginTop: 38,
+    alignItems: 'center',
+  },
+  footnoteText: {
+    fontSize: 12,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
 });

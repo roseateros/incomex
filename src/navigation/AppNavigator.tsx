@@ -2,7 +2,7 @@ import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import type { Session } from '@supabase/supabase-js';
-import { TouchableOpacity, Text, useColorScheme } from 'react-native';
+import { TouchableOpacity, Text, useColorScheme, StyleSheet, View } from 'react-native';
 
 import { AddTransactionScreen } from '../screens/AddTransactionScreen';
 import { DailySummaryScreen } from '../screens/DailySummaryScreen';
@@ -10,6 +10,7 @@ import { MonthlySummaryScreen } from '../screens/MonthlySummaryScreen';
 import { ReportsScreen } from '../screens/ReportsScreen';
 import { FilterIcon, CalendarIcon, ChartIcon, PlusIcon } from '../components/Icons';
 import { supabase } from '../lib/supabase';
+import { useAwardPalette } from '../theme/awardPalette';
 
 const Tab = createBottomTabNavigator();
 
@@ -20,51 +21,66 @@ type AppNavigatorProps = {
 export const AppNavigator = ({ session }: AppNavigatorProps) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const palette = useAwardPalette();
 
   const theme = {
     ...(isDark ? DarkTheme : DefaultTheme),
     colors: {
       ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
-      background: isDark ? '#0F1419' : '#F5F5F5',
+      background: palette.surface,
+      card: palette.surface,
+      border: palette.border,
+      primary: palette.accent,
+      text: palette.text,
     },
   };
 
   return (
     <NavigationContainer theme={theme}>
-      <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={isDark ? '#0F1419' : '#16213E'} />
+  <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={palette.surface} />
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerStyle: {
-            backgroundColor: '#16213E',
+            backgroundColor: palette.surface,
             elevation: 0,
             shadowOpacity: 0,
-            borderBottomWidth: 1,
-            borderBottomColor: '#2C2C3E',
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: palette.border,
           },
-          headerTintColor: '#FFFFFF',
+          headerTintColor: palette.text,
           headerTitleStyle: {
             fontWeight: '700',
             fontSize: 18,
+            color: palette.text,
           },
+          headerBackground: () => (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface, opacity: 0.94 }]} />
+          ),
+          headerTitleAlign: 'center',
+          headerTransparent: false,
+          headerShadowVisible: false,
+          headerRight: () => (
+            <TouchableOpacity onPress={() => supabase.auth.signOut()} style={styles.headerButton}>
+              <Text style={[styles.headerButtonText, { color: palette.accent }]}>Salir</Text>
+            </TouchableOpacity>
+          ),
           tabBarStyle: {
-            backgroundColor: '#16213E',
-            borderTopWidth: 1,
-            borderTopColor: '#2C2C3E',
-            height: 65,
-            paddingBottom: 8,
-            paddingTop: 8,
+            backgroundColor: palette.surface,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: palette.border,
+            height: 62,
+            paddingBottom: 10,
+            paddingTop: 6,
           },
-          tabBarActiveTintColor: '#4A90E2',
-          tabBarInactiveTintColor: '#95A5A6',
+          tabBarActiveTintColor: palette.accent,
+          tabBarInactiveTintColor: palette.subtext,
           tabBarLabelStyle: {
             fontSize: 12,
             fontWeight: '600',
           },
-          headerRight: () => (
-            <TouchableOpacity onPress={() => supabase.auth.signOut()} style={{ paddingHorizontal: 16 }}>
-              <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>Salir</Text>
-            </TouchableOpacity>
-          ),
+          sceneContainerStyle: {
+            backgroundColor: 'transparent',
+          },
           tabBarIcon: ({ color, size }) => {
             switch (route.name) {
               case 'Agregar':
@@ -109,3 +125,14 @@ export const AppNavigator = ({ session }: AppNavigatorProps) => {
     </NavigationContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  headerButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  headerButtonText: {
+    fontWeight: '600',
+    fontSize: 14,
+  },
+});

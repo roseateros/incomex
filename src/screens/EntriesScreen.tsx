@@ -14,10 +14,13 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { Button, FAB } from '@rneui/themed';
 import { format } from 'date-fns';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createEntry, fetchEntries } from '../services/entries';
 import type { Entry, EntryDraft } from '../types/entry';
 import type { Session } from '@supabase/supabase-js';
+import { AwardBackground } from '../components/AwardBackground';
+import { useAwardPalette } from '../theme/awardPalette';
 
 const DATE_INPUT_FORMAT = 'yyyy-MM-dd';
 
@@ -26,6 +29,7 @@ type EntriesScreenProps = {
 };
 
 export const EntriesScreen = ({ session }: EntriesScreenProps) => {
+  const palette = useAwardPalette();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -111,11 +115,13 @@ export const EntriesScreen = ({ session }: EntriesScreenProps) => {
 
   const renderItem = useCallback(({ item }: { item: Entry }) => {
     const formattedDate = format(new Date(item.entry_date), 'dd MMM yyyy');
+    const amountColor = item.amount >= 0 ? palette.positive : palette.negative;
+
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardCategory}>{item.category ?? 'Sin categoría'}</Text>
-          <Text style={[styles.cardAmount, item.amount >= 0 ? styles.positive : styles.negative]}>
+          <Text style={[styles.cardCategory, { color: palette.text }]}>{item.category ?? 'Sin categoría'}</Text>
+          <Text style={[styles.cardAmount, { color: amountColor }]}>
             {new Intl.NumberFormat('es-ES', {
               style: 'currency',
               currency: 'EUR',
@@ -123,11 +129,11 @@ export const EntriesScreen = ({ session }: EntriesScreenProps) => {
             }).format(item.amount)}
           </Text>
         </View>
-        <Text style={styles.cardDate}>{formattedDate}</Text>
-        {item.note ? <Text style={styles.cardNote}>{item.note}</Text> : null}
+        <Text style={[styles.cardDate, { color: palette.subtext }]}>{formattedDate}</Text>
+        {item.note ? <Text style={[styles.cardNote, { color: palette.text }]}>{item.note}</Text> : null}
       </View>
     );
-  }, []);
+  }, [palette]);
 
   const emptyListComponent = useMemo(() => {
     if (loading) {
@@ -136,108 +142,136 @@ export const EntriesScreen = ({ session }: EntriesScreenProps) => {
 
     return (
       <View style={styles.emptyState}>
-        <Text style={styles.emptyStateTitle}>No hay movimientos todavía</Text>
-        <Text style={styles.emptyStateSubtitle}>Agrega tu primer ingreso o gasto using el botón azul.</Text>
+        <Text style={[styles.emptyStateTitle, { color: palette.text }]}>No hay movimientos todavía</Text>
+        <Text style={[styles.emptyStateSubtitle, { color: palette.subtext }]}>Agrega tu primer ingreso o gasto usando el botón.</Text>
       </View>
     );
-  }, [loading]);
+  }, [loading, palette]);
 
   return (
-    <View style={styles.container}>
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2563eb" />
+    <AwardBackground>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+        <View style={styles.listContainer}>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={palette.accent} />
+            </View>
+          ) : (
+            <FlatList
+              data={entries}
+              keyExtractor={(item) => item.id}
+              renderItem={renderItem}
+              contentContainerStyle={entries.length === 0 ? [styles.listContent, styles.emptyListContent] : styles.listContent}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+              ListEmptyComponent={emptyListComponent}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
         </View>
-      ) : (
-        <FlatList
-          data={entries}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={entries.length === 0 ? styles.emptyList : undefined}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={emptyListComponent}
+
+        <FAB
+          icon={{ name: 'add', color: '#FFFFFF' }}
+          color={palette.accent}
+          placement="right"
+          onPress={handleOpenModal}
+          accessibilityLabel="Agregar movimiento"
         />
-      )}
 
-      <FAB
-        icon={{ name: 'add', color: 'white' }}
-        color="#2563eb"
-        placement="right"
-        onPress={handleOpenModal}
-        accessibilityLabel="Agregar movimiento"
-      />
+        <Modal visible={isModalVisible} animationType="slide" onRequestClose={() => setModalVisible(false)}>
+          <View style={[styles.modalContent, { backgroundColor: palette.surface }]}>
+            <Text style={[styles.modalTitle, { color: palette.text }]}>Nuevo movimiento</Text>
 
-      <Modal visible={isModalVisible} animationType="slide" onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Nuevo movimiento</Text>
+            <Text style={[styles.inputLabel, { color: palette.subtext }]}>Fecha</Text>
+            <TextInput
+              style={[styles.input, { borderColor: palette.border, backgroundColor: palette.surfaceStrong, color: palette.text }]}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={palette.placeholder}
+              value={draft.entry_date}
+              onChangeText={(value) => setDraft((prev) => ({ ...prev, entry_date: value }))}
+            />
 
-          <Text style={styles.inputLabel}>Fecha</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="YYYY-MM-DD"
-            value={draft.entry_date}
-            onChangeText={(value) => setDraft((prev) => ({ ...prev, entry_date: value }))}
-          />
+            <Text style={[styles.inputLabel, { color: palette.subtext }]}>Categoría</Text>
+            <TextInput
+              style={[styles.input, { borderColor: palette.border, backgroundColor: palette.surfaceStrong, color: palette.text }]}
+              placeholder="Categoría"
+              placeholderTextColor={palette.placeholder}
+              value={draft.category}
+              onChangeText={(value) => setDraft((prev) => ({ ...prev, category: value }))}
+            />
 
-          <Text style={styles.inputLabel}>Categoría</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Categoría"
-            value={draft.category}
-            onChangeText={(value) => setDraft((prev) => ({ ...prev, category: value }))}
-          />
+            <Text style={[styles.inputLabel, { color: palette.subtext }]}>Monto (€)</Text>
+            <TextInput
+              style={[styles.input, { borderColor: palette.border, backgroundColor: palette.surfaceStrong, color: palette.text }]}
+              placeholder="0.00"
+              placeholderTextColor={palette.placeholder}
+              keyboardType={Platform.select({ ios: 'decimal-pad', android: 'numeric', default: 'numeric' })}
+              value={draft.amount ? String(draft.amount) : ''}
+              onChangeText={(value) =>
+                setDraft((prev) => ({ ...prev, amount: Number(value.replace(',', '.')) || 0 }))
+              }
+            />
 
-          <Text style={styles.inputLabel}>Monto (€)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="0.00"
-            keyboardType={Platform.select({ ios: 'decimal-pad', android: 'numeric', default: 'numeric' })}
-            value={draft.amount ? String(draft.amount) : ''}
-            onChangeText={(value) =>
-              setDraft((prev) => ({ ...prev, amount: Number(value.replace(',', '.')) || 0 }))
-            }
-          />
+            <Text style={[styles.inputLabel, { color: palette.subtext }]}>Nota</Text>
+            <TextInput
+              style={[styles.input, styles.noteInput, { borderColor: palette.border, backgroundColor: palette.surfaceStrong, color: palette.text }]}
+              placeholder="Descripción opcional"
+              placeholderTextColor={palette.placeholder}
+              multiline
+              numberOfLines={3}
+              value={draft.note ?? ''}
+              onChangeText={(value) => setDraft((prev) => ({ ...prev, note: value }))}
+            />
 
-          <Text style={styles.inputLabel}>Nota</Text>
-          <TextInput
-            style={[styles.input, styles.noteInput]}
-            placeholder="Descripción opcional"
-            multiline
-            numberOfLines={3}
-            value={draft.note ?? ''}
-            onChangeText={(value) => setDraft((prev) => ({ ...prev, note: value }))}
-          />
-
-          <View style={styles.modalActions}>
-            <Button title="Cancelar" type="outline" onPress={() => setModalVisible(false)} containerStyle={styles.modalButton} />
-            <Button title="Guardar" onPress={handleSubmitEntry} containerStyle={styles.modalButton} />
+            <View style={styles.modalActions}>
+              <Button
+                title="Cancelar"
+                type="outline"
+                onPress={() => setModalVisible(false)}
+                containerStyle={styles.modalButton}
+                buttonStyle={[styles.modalOutlineButton, { borderColor: palette.border }]}
+                titleStyle={{ color: palette.text }}
+              />
+              <Button
+                title="Guardar"
+                onPress={handleSubmitEntry}
+                containerStyle={styles.modalButton}
+                buttonStyle={[styles.modalPrimaryButton, { backgroundColor: palette.accent }]}
+                titleStyle={{ fontWeight: '700' }}
+              />
+            </View>
           </View>
-        </View>
-      </Modal>
-    </View>
+        </Modal>
+      </SafeAreaView>
+    </AwardBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#f3f4f6',
+  },
+  listContainer: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 80,
+  },
+  emptyListContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyList: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
   card: {
-    marginHorizontal: 16,
-    marginVertical: 8,
+    marginBottom: 12,
     padding: 16,
     borderRadius: 12,
-    backgroundColor: '#ffffff',
+    borderWidth: 1,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
@@ -252,27 +286,18 @@ const styles = StyleSheet.create({
   cardCategory: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
   },
   cardAmount: {
     fontSize: 16,
     fontWeight: '700',
   },
-  positive: {
-    color: '#16a34a',
-  },
-  negative: {
-    color: '#dc2626',
-  },
   cardDate: {
     marginTop: 4,
     fontSize: 14,
-    color: '#6b7280',
   },
   cardNote: {
     marginTop: 8,
     fontSize: 14,
-    color: '#374151',
   },
   emptyState: {
     alignItems: 'center',
@@ -281,40 +306,34 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
     marginBottom: 8,
     textAlign: 'center',
   },
   emptyStateSubtitle: {
     fontSize: 14,
-    color: '#4b5563',
     textAlign: 'center',
   },
   modalContent: {
     flex: 1,
     paddingTop: 48,
     paddingHorizontal: 24,
-    backgroundColor: '#ffffff',
+    paddingBottom: 32,
   },
   modalTitle: {
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 24,
-    color: '#111827',
   },
   inputLabel: {
     fontSize: 14,
-    color: '#374151',
     marginBottom: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
-    backgroundColor: '#f9fafb',
     marginBottom: 16,
   },
   noteInput: {
@@ -325,9 +344,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 16,
+    gap: 12,
   },
   modalButton: {
     flex: 1,
-    marginHorizontal: 4,
+  },
+  modalOutlineButton: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+  },
+  modalPrimaryButton: {
+    borderRadius: 10,
+    paddingVertical: 12,
   },
 });
