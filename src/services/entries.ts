@@ -1,73 +1,32 @@
-import { LedgerEntry, UpsertLedgerEntry } from '@models/ledger';
-import { supabase } from './supabaseClient';
+import { supabase } from '../lib/supabase';
+import type { Entry, EntryDraft } from '../types/entry';
 
-const TABLE_NAME = 'ledger_entries';
-
-export async function fetchEntriesByDate(dateISO: string): Promise<LedgerEntry[]> {
+export async function fetchEntries(userId: string) {
   const { data, error } = await supabase
-    .from(TABLE_NAME)
+    .from('entries')
     .select('*')
-    .eq('entry_date', dateISO)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    throw error;
-  }
-
-  return data ?? [];
-}
-
-export async function fetchEntriesInRange(startISO: string, endISO: string): Promise<LedgerEntry[]> {
-  const { data, error } = await supabase
-    .from(TABLE_NAME)
-    .select('*')
-    .gte('entry_date', startISO)
-    .lte('entry_date', endISO)
+    .eq('user_id', userId)
     .order('entry_date', { ascending: false });
 
   if (error) {
     throw error;
   }
 
-  return data ?? [];
+  return (data ?? []) as Entry[];
 }
 
-export async function createEntry(payload: UpsertLedgerEntry): Promise<LedgerEntry> {
-  const { data, error } = await supabase
-    .from(TABLE_NAME)
-    .insert(payload)
-    .select()
-    .single();
+export async function createEntry(userId: string, draft: EntryDraft) {
+  const payload = {
+    ...draft,
+    note: draft.note ?? null,
+    user_id: userId,
+  };
+
+  const { data, error } = await supabase.from('entries').insert(payload).select().single();
 
   if (error) {
     throw error;
   }
 
-  return data;
-}
-
-export async function updateEntry(id: string, payload: UpsertLedgerEntry): Promise<LedgerEntry> {
-  const { data, error } = await supabase
-    .from(TABLE_NAME)
-    .update({ ...payload, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return data;
-}
-
-export async function deleteEntry(id: string): Promise<void> {
-  const { error } = await supabase
-    .from(TABLE_NAME)
-    .delete()
-    .eq('id', id);
-
-  if (error) {
-    throw error;
-  }
+  return data as Entry;
 }

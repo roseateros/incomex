@@ -1,192 +1,295 @@
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { VictoryPie } from 'victory-native';
-import { AnimatedStatCard } from '@components/AnimatedStatCard';
-import { EmptyState } from '@components/EmptyState';
-import { SegmentedControl } from '@components/SegmentedControl';
-import { SourceBreakdownList } from '@components/SourceBreakdownList';
-import { useReportSummary } from '@hooks/useEntries';
-import { SOURCE_DESCRIPTORS } from '@constants/sources';
-import { formatCurrency } from '@utils/format';
-import { formatMonthYearLabel, stepMonth, stepYear } from '@utils/dates';
-import { palette, theme } from '@theme/colors';
+import { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useColorScheme,
+} from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import type { Session } from '@supabase/supabase-js';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-const segmentOptions = [
-  { value: 'month' as const, label: 'Mensual' },
-  { value: 'year' as const, label: 'Anual' }
-];
+import { ArrowLeftIcon, ArrowRightIcon, ChartIcon, DollarIcon } from '../components/Icons';
+import { TableView } from '../components/TableView';
+import { Toast } from '../components/Toast';
+import { darkTheme, lightTheme } from '../theme/colors';
+import { formatNumber } from '../utils/formatNumber';
+import type { YearlySummary } from '../types';
+import { transactionsService } from '../services/transactionsService';
 
-export function ReportsScreen() {
-  interface ChartDatum {
-    x: string;
-    y: number;
-    color: string;
-  }
+type ReportsScreenProps = {
+  session: Session;
+};
 
-  const [mode, setMode] = useState<'month' | 'year'>('month');
-  const [referenceDate, setReferenceDate] = useState(new Date());
+export const ReportsScreen = ({ session }: ReportsScreenProps) => {
+  const colorScheme = useColorScheme();
+  const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
 
-  const summaryQuery = useReportSummary(referenceDate, mode);
-  const summary = summaryQuery.summary;
+  const [yearlySummary, setYearlySummary] = useState<YearlySummary | null>(null);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [isLoading, setIsLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; visible: boolean }>(
+    { message: '', type: 'success', visible: false },
+  );
 
-  const periodLabel = useMemo(() => {
-    return mode === 'month' ? formatMonthYearLabel(referenceDate) : referenceDate.getFullYear().toString();
-  }, [mode, referenceDate]);
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ message, type, visible: true });
+    setTimeout(() => setToast((prev) => ({ ...prev, visible: false })), 3000);
+  }, []);
 
-  function shift(step: number) {
-    setReferenceDate((prev) => (mode === 'month' ? stepMonth(prev, step) : stepYear(prev, step)));
-  }
+  const loadYearlySummary = useCallback(
+    async (showLoader = true) => {
+      if (showLoader) {
+        setIsLoading(true);
+      }
 
-  const incomeChartData = useMemo<ChartDatum[] | null>(() => {
-    if (!summary || summary.totalIncome === 0) {
-      return null;
+      try {
+        const data = await transactionsService.getYearlySummary(session.user.id, selectedYear);
+        setYearlySummary(data);
+      } catch (error) {
+        console.error('Error al cargar resumen anual', error);
+        setYearlySummary(null);
+        showToast('No pudimos cargar el resumen anual.', 'error');
+      } finally {
+        if (showLoader) {
+          setIsLoading(false);
+        }
+      }
+    },
+    [selectedYear, session.user.id, showToast],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadYearlySummary();
+    }, [loadYearlySummary]),
+  );
+
+  const changeYear = (delta: number) => {
+    setSelectedYear((prev) => prev + delta);
+  };
+
+  const monthlyData = yearlySummary?.dailySummaries.reduce((acc, day) => {
+    const monthKey = format(new Date(day.date), 'MMM', { locale: es });
+
+    if (!acc[monthKey]) {
+      acc[monthKey] = {
+        month: monthKey,
+        card: 0,
+        cash: 0,
+        app: 0,
+        total: 0,
+        summary: 0,
+      };
     }
-    return summary.incomeBySource.map((item) => ({
-      x: `${item.label}\n${formatCurrency(item.total)}`,
-      y: item.total,
-      color: SOURCE_DESCRIPTORS[item.source].color
-    }));
-  }, [summary]);
 
-  const expenseChartData = useMemo<ChartDatum[] | null>(() => {
-    if (!summary || summary.totalExpense === 0) {
-      return null;
-    }
-    return summary.expenseBySource.map((item) => ({
-      x: `${item.label}\n${formatCurrency(item.total)}`,
-      y: item.total,
-      color: SOURCE_DESCRIPTORS[item.source].color
-    }));
-  }, [summary]);
+    acc[monthKey].card += day.incomeByMethod.card;
+    acc[monthKey].cash += day.incomeByMethod.cash;
+    acc[monthKey].app += day.incomeByMethod.app;
+    acc[monthKey].total += day.totalIncome;
+    acc[monthKey].summary += day.totalExpenses;
+
+    return acc;
+  }, {} as Record<string, { month: string; card: number; cash: number; app: number; total: number; summary: number }>);
+
+  const tableColumns = [
+    { key: 'date', label: 'Mes', width: 2, align: 'left' as const, headerColor: '#90C695' },
+    { key: 'card', label: 'Tarjeta', width: 2, align: 'right' as const, headerColor: '#90C695' },
+    { key: 'cash', label: 'Efectivo', width: 2, align: 'right' as const, headerColor: '#90C695' },
+    { key: 'app', label: 'App T3', width: 2, align: 'right' as const, headerColor: '#90C695' },
+    { key: 'total', label: 'Total', width: 2, align: 'right' as const, headerColor: '#90C695', backgroundColor: '#E8F5E9' },
+    { key: 'summary', label: 'Gastos', width: 2, align: 'right' as const, headerColor: '#90C695', backgroundColor: '#FFF9C4' },
+  ];
+
+  const tableData = monthlyData
+    ? Object.values(monthlyData).map((month) => ({
+        date: month.month,
+        card: formatNumber(month.card),
+        cash: formatNumber(month.cash),
+        app: formatNumber(month.app),
+        total: formatNumber(month.total),
+        summary: formatNumber(month.summary),
+      }))
+    : [];
+
+  const totalRow = yearlySummary
+    ? {
+        date: 'Total',
+        card: formatNumber(yearlySummary.incomeByMethod.card),
+        cash: formatNumber(yearlySummary.incomeByMethod.cash),
+        app: formatNumber(yearlySummary.incomeByMethod.app),
+        total: formatNumber(yearlySummary.totalIncome),
+        summary: formatNumber(yearlySummary.totalExpenses),
+      }
+    : {
+        date: 'Total',
+        card: '0',
+        cash: '0',
+        app: '0',
+        total: '0',
+        summary: '0',
+      };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.headerRow}>
-          <Pressable onPress={() => shift(-1)} hitSlop={16}>
-            <MaterialCommunityIcons name="chevron-left" size={28} color={palette.textPrimary} />
-          </Pressable>
-          <View>
-            <Text style={styles.heading}>Reportes</Text>
-            <Text style={styles.subtitle}>{periodLabel}</Text>
-          </View>
-          <Pressable onPress={() => shift(1)} hitSlop={16}>
-            <MaterialCommunityIcons name="chevron-right" size={28} color={palette.textPrimary} />
-          </Pressable>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.contentContainer}>
+      {isLoading ? (
+        <View style={styles.progressContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      ) : null}
+      <View style={[styles.yearSelector, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        <TouchableOpacity onPress={() => changeYear(-1)}>
+          <ArrowLeftIcon size={28} color={theme.text} />
+        </TouchableOpacity>
+
+        <View style={styles.yearInfo}>
+          <ChartIcon size={28} color={theme.primary} />
+          <Text style={[styles.yearText, { color: theme.text }]}>{selectedYear}</Text>
         </View>
 
-        <SegmentedControl options={segmentOptions} value={mode} onChange={setMode} />
+        <TouchableOpacity onPress={() => changeYear(1)}>
+          <ArrowRightIcon size={28} color={theme.text} />
+        </TouchableOpacity>
+      </View>
 
-        {summaryQuery.isLoading ? (
-          <View style={styles.loader}>
-            <ActivityIndicator color={palette.primary} />
+      <View style={[styles.totalCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        <Text style={[styles.totalCardTitle, { color: theme.text }]}>Resumen Anual {selectedYear}</Text>
+        <View style={styles.totalCardContent}>
+          <View style={styles.totalRow}>
+            <View style={styles.totalLabelContainer}>
+              <DollarIcon size={20} color={theme.success} />
+              <Text style={[styles.totalLabel, { color: theme.text }]}>Total Ingresos:</Text>
+            </View>
+            <Text style={[styles.totalIncome, { color: theme.success }]}>
+              {yearlySummary ? formatNumber(yearlySummary.totalIncome) : '0,00'} €
+            </Text>
           </View>
-        ) : !summary ? (
-          <EmptyState
-            icon="chart-timeline-variant"
-            title="Sin datos"
-            subtitle="Agrega movimientos para ver reportes."
-          />
-        ) : (
-          <View style={styles.section}>
-            <AnimatedStatCard
-              title="Ingresos acumulados"
-              value={summary.totalIncome}
-              colors={[palette.primary, palette.primaryAlt]}
-            />
-            <AnimatedStatCard
-              title="Gastos acumulados"
-              value={summary.totalExpense}
-              colors={[palette.danger, '#b91c1c']}
-            />
-
-            {incomeChartData ? (
-              <View style={styles.chartCard}>
-                <Text style={styles.chartTitle}>Ingresos por fuente</Text>
-                <VictoryPie
-                  data={incomeChartData}
-                  colorScale={incomeChartData.map((item) => item.color)}
-                  innerRadius={60}
-                  padAngle={2}
-                  animate={{ duration: 700 }}
-                  labels={({ datum }: { datum: ChartDatum }) => datum.x}
-                  style={{
-                    labels: {
-                      fill: '#ffffff',
-                      fontSize: 12
-                    }
-                  }}
-                />
-                <SourceBreakdownList data={summary.incomeBySource} total={summary.totalIncome} />
-              </View>
-            ) : null}
-
-            {expenseChartData ? (
-              <View style={styles.chartCard}>
-                <Text style={styles.chartTitle}>Gastos por fuente</Text>
-                <VictoryPie
-                  data={expenseChartData}
-                  colorScale={expenseChartData.map((item) => item.color)}
-                  innerRadius={60}
-                  padAngle={2}
-                  animate={{ duration: 700 }}
-                  labels={({ datum }: { datum: ChartDatum }) => datum.x}
-                  style={{
-                    labels: {
-                      fill: '#ffffff',
-                      fontSize: 12
-                    }
-                  }}
-                />
-                <SourceBreakdownList data={summary.expenseBySource} total={summary.totalExpense} />
-              </View>
-            ) : null}
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          <View style={styles.totalRow}>
+            <View style={styles.totalLabelContainer}>
+              <DollarIcon size={20} color={theme.error} />
+              <Text style={[styles.totalLabel, { color: theme.text }]}>Total Gastos:</Text>
+            </View>
+            <Text style={[styles.totalExpense, { color: theme.error }]}>
+              {yearlySummary ? formatNumber(yearlySummary.totalExpenses) : '0,00'} €
+            </Text>
           </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Desglose Mensual</Text>
+        <TableView
+          columns={tableColumns}
+          data={tableData}
+          showTotal
+          totalRow={totalRow}
+          emptyMessage="No hay datos para este año"
+        />
+      </View>
+
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
+      />
+    </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
-    backgroundColor: palette.background
   },
-  content: {
-    padding: theme.spacing.lg,
-    gap: theme.spacing.lg
+  contentContainer: {
+    padding: 20,
+    paddingBottom: 40,
   },
-  headerRow: {
+  progressContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  yearSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
   },
-  heading: {
-    color: palette.textPrimary,
-    fontSize: 24,
-    fontWeight: '700'
+  yearInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  subtitle: {
-    color: palette.textSecondary,
-    fontSize: 14
+  yearText: {
+    fontSize: 28,
+    fontWeight: '800',
   },
-  loader: {
-    paddingVertical: theme.spacing.xl
+  totalCard: {
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+  },
+  totalCardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  totalCardContent: {
+    gap: 12,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  totalLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  totalIncome: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  totalExpense: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  divider: {
+    height: 1,
+    marginVertical: 4,
   },
   section: {
-    gap: theme.spacing.lg
+    marginBottom: 20,
   },
-  chartCard: {
-    backgroundColor: palette.surfaceAlt,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.lg,
-    gap: theme.spacing.md
-  },
-  chartTitle: {
-    color: palette.textPrimary,
+  sectionTitle: {
     fontSize: 18,
-    fontWeight: '700'
-  }
+    fontWeight: '700',
+    marginBottom: 12,
+  },
 });

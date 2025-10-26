@@ -1,36 +1,59 @@
-export const palette = {
-  background: '#0F172A',
-  surface: '#111C3A',
-  surfaceAlt: '#142347',
-  primary: '#2563EB',
-  primaryAlt: '#3B82F6',
-  success: '#10B981',
-  warning: '#F59E0B',
-  danger: '#DC2626',
-  textPrimary: '#F8FAFC',
-  textSecondary: '#CBD5F5',
-  border: '#1E2957',
-  overlay: 'rgba(3, 7, 18, 0.65)'
+export const lightTheme = {
+  background: '#F5F5F5',
+  surface: '#FFFFFF',
+  surfaceVariant: '#F8F9FA',
+  text: '#2D3436',
+  textSecondary: '#636E72',
+  textTertiary: '#95A5A6',
+  primary: '#4CAF50',
+  primaryDark: '#388E3C',
+  primaryLight: '#81C784',
+  success: '#27AE60',
+  error: '#E74C3C',
+  warning: '#F39C12',
+  info: '#3498DB',
+  card: '#4A90E2',
+  cash: '#27AE60',
+  app: '#9B59B6',
+  border: '#E0E0E0',
+  divider: '#DFE6E9',
+  tableHeader: '#90C695',
+  tableHeaderText: '#1A4D2E',
+  tableRow: '#FFFFFF',
+  tableRowAlt: '#F8F9FA',
+  tableBorder: '#C8E6C9',
+  tableTotal: '#D1E8D1',
+  tableHighlight: '#E8F5E9',
+  tableSummary: '#FFF9C4',
 };
 
-export const theme = {
-  colors: palette,
-  radius: {
-    sm: 12,
-    md: 20,
-    lg: 28
-  },
-  spacing: {
-    xs: 8,
-    sm: 12,
-    md: 16,
-    lg: 24,
-    xl: 32
-  },
-  typography: {
-    heading: 28,
-    subheading: 18,
-    body: 15,
-    caption: 13
-  }
+export const darkTheme = {
+  background: '#0F1419',
+  surface: '#16213E',
+  surfaceVariant: '#1E1E2E',
+  text: '#FFFFFF',
+  textSecondary: '#B2BEC3',
+  textTertiary: '#95A5A6',
+  primary: '#4CAF50',
+  primaryDark: '#388E3C',
+  primaryLight: '#81C784',
+  success: '#27AE60',
+  error: '#E74C3C',
+  warning: '#F39C12',
+  info: '#3498DB',
+  card: '#4A90E2',
+  cash: '#27AE60',
+  app: '#9B59B6',
+  border: '#2C2C3E',
+  divider: '#2C3E50',
+  tableHeader: '#2C5530',
+  tableHeaderText: '#90C695',
+  tableRow: '#16213E',
+  tableRowAlt: '#1A1A24',
+  tableBorder: '#2C3E50',
+  tableTotal: '#1E3A1F',
+  tableHighlight: '#1E3A1F',
+  tableSummary: '#3A3520',
 };
+
+export type Theme = typeof lightTheme;
