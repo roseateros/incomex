@@ -3,16 +3,18 @@ import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import type { Session } from '@supabase/supabase-js';
-import { TouchableOpacity, useColorScheme, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { AddTransactionScreen } from '../screens/AddTransactionScreen';
 import { DailySummaryScreen } from '../screens/DailySummaryScreen';
 import { MonthlySummaryScreen } from '../screens/MonthlySummaryScreen';
 import { ReportsScreen } from '../screens/ReportsScreen';
 import { FilterIcon, CalendarIcon, ChartIcon, PlusIcon } from '../components/Icons';
-import { useAwardPalette } from '../theme/awardPalette';
+import { useAwardPalette, getAwardBackground } from '../theme/awardPalette';
 import { ProfileSheet } from '../components/ProfileSheet';
+import { useAppTheme } from '../theme/AppThemeContext';
 
 const Tab = createBottomTabNavigator();
 
@@ -21,12 +23,14 @@ type AppNavigatorProps = {
 };
 
 export const AppNavigator = ({ session }: AppNavigatorProps) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { theme: currentTheme } = useAppTheme();
+  const isDark = currentTheme === 'dark';
   const palette = useAwardPalette();
   const [profileVisible, setProfileVisible] = useState(false);
+  const tabBackgroundGradient = getAwardBackground(currentTheme);
+  const tabOverlay = isDark ? 'rgba(2, 6, 23, 0.78)' : 'rgba(255, 255, 255, 0.86)';
 
-  const theme = {
+  const navigationTheme = {
     ...(isDark ? DarkTheme : DefaultTheme),
     colors: {
       ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
@@ -40,7 +44,7 @@ export const AppNavigator = ({ session }: AppNavigatorProps) => {
 
   return (
     <>
-      <NavigationContainer theme={theme}>
+      <NavigationContainer theme={navigationTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={palette.surface} />
         <Tab.Navigator
           screenOptions={({ route }) => ({
@@ -76,13 +80,24 @@ export const AppNavigator = ({ session }: AppNavigatorProps) => {
               </TouchableOpacity>
             ),
             tabBarStyle: {
-              backgroundColor: palette.surface,
-              borderTopWidth: StyleSheet.hairlineWidth,
-              borderTopColor: palette.border,
+              backgroundColor: 'transparent',
+              borderTopWidth: 0,
+              elevation: 0,
               height: 62,
               paddingBottom: 10,
               paddingTop: 6,
             },
+            tabBarBackground: () => (
+              <View style={StyleSheet.absoluteFill}>
+                <LinearGradient
+                  colors={tabBackgroundGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: tabOverlay }]} />
+              </View>
+            ),
             tabBarActiveTintColor: palette.accent,
             tabBarInactiveTintColor: palette.subtext,
             tabBarLabelStyle: {
@@ -108,31 +123,31 @@ export const AppNavigator = ({ session }: AppNavigatorProps) => {
             },
           })}
         >
-        <Tab.Screen
-          name="Agregar"
-          options={{ headerTitle: 'Registrar Transacción' }}
-        >
-          {(props) => <AddTransactionScreen {...props} session={session} />}
-        </Tab.Screen>
-        <Tab.Screen
-          name="Diario"
-          options={{ headerTitle: 'Resumen Diario' }}
-        >
-          {(props) => <DailySummaryScreen {...props} session={session} />}
-        </Tab.Screen>
-        <Tab.Screen
-          name="Mensual"
-          options={{ headerTitle: 'Resumen Mensual' }}
-        >
-          {(props) => <MonthlySummaryScreen {...props} session={session} />}
-        </Tab.Screen>
-        <Tab.Screen
-          name="Reportes"
-          options={{ headerTitle: 'Reportes y Análisis' }}
-        >
-          {(props) => <ReportsScreen {...props} session={session} />}
-        </Tab.Screen>
-  </Tab.Navigator>
+          <Tab.Screen
+            name="Agregar"
+            options={{ headerTitle: 'Registrar Transacción' }}
+          >
+            {(props) => <AddTransactionScreen {...props} session={session} />}
+          </Tab.Screen>
+          <Tab.Screen
+            name="Diario"
+            options={{ headerTitle: 'Resumen Diario' }}
+          >
+            {(props) => <DailySummaryScreen {...props} session={session} />}
+          </Tab.Screen>
+          <Tab.Screen
+            name="Mensual"
+            options={{ headerTitle: 'Resumen Mensual' }}
+          >
+            {(props) => <MonthlySummaryScreen {...props} session={session} />}
+          </Tab.Screen>
+          <Tab.Screen
+            name="Reportes"
+            options={{ headerTitle: 'Reportes y Análisis' }}
+          >
+            {(props) => <ReportsScreen {...props} session={session} />}
+          </Tab.Screen>
+        </Tab.Navigator>
       </NavigationContainer>
       <ProfileSheet
         visible={profileVisible}

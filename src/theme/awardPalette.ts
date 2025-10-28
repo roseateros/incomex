@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { useColorScheme, type ColorSchemeName } from 'react-native';
 
+import { useAppTheme } from './AppThemeContext';
+
 export type AwardPalette = {
   text: string;
   subtext: string;
@@ -101,11 +103,13 @@ const secondaryGlows: Record<'light' | 'dark', string[]> = {
   dark: ['rgba(168, 85, 247, 0.38)', 'rgba(168, 85, 247, 0)'],
 };
 
-const resolveScheme = (scheme: ColorSchemeName) => (scheme === 'dark' ? 'dark' : 'light');
+const resolveScheme = (scheme: ColorSchemeName | 'light' | 'dark') => (scheme === 'dark' ? 'dark' : 'light');
 
 export const useAwardPalette = () => {
+  const { theme } = useAppTheme();
   const scheme = useColorScheme();
-  return useMemo(() => palettes[resolveScheme(scheme)], [scheme]);
+  const resolved = theme ?? resolveScheme(scheme);
+  return useMemo(() => palettes[resolveScheme(resolved)], [resolved]);
 };
 
 export const getAwardPalette = (scheme: ColorSchemeName) => palettes[resolveScheme(scheme)];

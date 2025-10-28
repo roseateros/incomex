@@ -3,15 +3,18 @@ import { StyleSheet, View, useColorScheme } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { getAwardBackground, getAwardGlows } from '../theme/awardPalette';
+import { useAppTheme } from '../theme/AppThemeContext';
 
 type AwardBackgroundProps = {
   children: ReactNode;
 };
 
 export const AwardBackground = ({ children }: AwardBackgroundProps) => {
+  const { theme } = useAppTheme();
   const scheme = useColorScheme();
-  const background = getAwardBackground(scheme);
-  const { primary, secondary } = getAwardGlows(scheme);
+  const resolvedScheme = theme ?? scheme ?? 'light';
+  const background = getAwardBackground(resolvedScheme);
+  const { primary, secondary } = getAwardGlows(resolvedScheme);
 
   return (
     <View style={styles.root}>

@@ -9,10 +9,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Button, FAB } from '@rneui/themed';
 import { format } from 'date-fns';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -169,13 +169,14 @@ export const EntriesScreen = ({ session }: EntriesScreenProps) => {
           )}
         </View>
 
-        <FAB
-          icon={{ name: 'add', color: '#FFFFFF' }}
-          color={palette.accent}
-          placement="right"
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: palette.accent, shadowColor: palette.accent }]}
           onPress={handleOpenModal}
           accessibilityLabel="Agregar movimiento"
-        />
+          activeOpacity={0.88}
+        >
+          <Text style={styles.fabIcon}>+</Text>
+        </TouchableOpacity>
 
         <Modal visible={isModalVisible} animationType="slide" onRequestClose={() => setModalVisible(false)}>
           <View style={[styles.modalContent, { backgroundColor: palette.surface }]}>
@@ -223,21 +224,20 @@ export const EntriesScreen = ({ session }: EntriesScreenProps) => {
             />
 
             <View style={styles.modalActions}>
-              <Button
-                title="Cancelar"
-                type="outline"
+              <TouchableOpacity
+                style={[styles.modalActionButton, styles.modalOutlineButton, { borderColor: palette.border }]}
                 onPress={() => setModalVisible(false)}
-                containerStyle={styles.modalButton}
-                buttonStyle={[styles.modalOutlineButton, { borderColor: palette.border }]}
-                titleStyle={{ color: palette.text }}
-              />
-              <Button
-                title="Guardar"
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.modalOutlineText, { color: palette.text }]}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalActionButton, styles.modalPrimaryButton, { backgroundColor: palette.accent }]}
                 onPress={handleSubmitEntry}
-                containerStyle={styles.modalButton}
-                buttonStyle={[styles.modalPrimaryButton, { backgroundColor: palette.accent }]}
-                titleStyle={{ fontWeight: '700' }}
-              />
+                activeOpacity={0.85}
+              >
+                <Text style={styles.modalPrimaryText}>Guardar</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -257,6 +257,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 80,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 32,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  fabIcon: {
+    fontSize: 34,
+    color: '#FFFFFF',
+    fontWeight: '700',
+    lineHeight: 34,
   },
   emptyListContent: {
     flexGrow: 1,
@@ -346,16 +366,34 @@ const styles = StyleSheet.create({
     marginTop: 16,
     gap: 12,
   },
-  modalButton: {
+  modalActionButton: {
     flex: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalOutlineButton: {
     borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
+    backgroundColor: 'transparent',
   },
   modalPrimaryButton: {
-    borderRadius: 10,
-    paddingVertical: 12,
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
+  },
+  modalPrimaryText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: 0.2,
+    textTransform: 'uppercase',
+  },
+  modalOutlineText: {
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+    textTransform: 'uppercase',
   },
 });
