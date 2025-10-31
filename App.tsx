@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Linking, StyleSheet, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, Linking, StyleSheet, View, SafeAreaView, StatusBar, Platform } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -11,23 +11,15 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { AppThemeContext, type AppTheme } from './src/theme/AppThemeContext';
 
 export default function App() {
-  const systemScheme = useColorScheme();
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authFlow, setAuthFlow] = useState<'auth' | 'reset'>('auth');
   const [resetEmail, setResetEmail] = useState<string | null>(null);
-  const [theme, setTheme] = useState<AppTheme>(() => (systemScheme === 'dark' ? 'dark' : 'light'));
+  const [theme, setTheme] = useState<AppTheme>('light');
 
   const toggleTheme = useCallback(() => {
     setTheme((prev: AppTheme) => (prev === 'light' ? 'dark' : 'light'));
   }, []);
-
-  useEffect(() => {
-    if (!systemScheme) {
-      return;
-    }
-    setTheme(systemScheme === 'dark' ? 'dark' : 'light');
-  }, [systemScheme]);
 
   const themeContextValue = useMemo(() => ({ theme, toggleTheme }), [theme, toggleTheme]);
 
@@ -156,25 +148,36 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AppThemeContext.Provider value={themeContextValue}>
-        <View style={styles.container}>
-        {authFlow === 'reset' ? (
-          <ResetPassword
-            email={resetEmail ?? undefined}
-            onComplete={handleResetComplete}
-            onCancel={handleResetCancel}
+  <SafeAreaView style={styles.safeArea}>
+          <StatusBar
+            barStyle={Platform.OS === 'android' ? 'light-content' : 'dark-content'}
+            backgroundColor="#050A1E"
+            translucent={true}
           />
-        ) : session && session.user ? (
-            <AppNavigator session={session} />
-        ) : (
-          <Auth />
-        )}
-        </View>
+          <View style={styles.container}>
+            {authFlow === 'reset' ? (
+              <ResetPassword
+                email={resetEmail ?? undefined}
+                onComplete={handleResetComplete}
+                onCancel={handleResetCancel}
+              />
+            ) : session && session.user ? (
+                <AppNavigator session={session} />
+            ) : (
+              <Auth />
+            )}
+          </View>
+        </SafeAreaView>
       </AppThemeContext.Provider>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',

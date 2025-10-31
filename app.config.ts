@@ -3,37 +3,55 @@ import type { ConfigContext, ExpoConfig } from '@expo/config';
 export default ({ config }: ConfigContext): ExpoConfig => {
   const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
   const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+  const splashBackground = '#050A1E';
 
   return {
     ...config,
     name: 'incomex',
     slug: 'incomex',
-    version: '1.0.0',
+    version: '1.0.2',
     orientation: 'portrait',
-    icon: './assets/icon.png',
+    icon: './assets/logo.png',
     userInterfaceStyle: 'light',
     newArchEnabled: true,
+    plugins: [
+      'react-native-google-mobile-ads'
+    ],
     splash: {
       image: './assets/splash-icon.png',
-      resizeMode: 'contain',
-      backgroundColor: '#ffffff',
+      resizeMode: 'cover',
+      backgroundColor: splashBackground,
     },
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.roseateros.incomex',
+      icon: './assets/logo.png',
+      googleServicesFile: './GoogleService-Info.plist',
+      splash: {
+        image: './assets/splash-icon.png',
+        resizeMode: 'cover',
+        backgroundColor: splashBackground,
+      },
     },
     android: {
       package: 'com.roseateros.incomex',
+      icon: './assets/logo.png',
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#ffffff',
+        backgroundColor: splashBackground,
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
-      versionCode: 1,
+      versionCode: 2,
+      googleServicesFile: './google-services.json',
+      splash: {
+        image: './assets/splash-icon.png',
+        resizeMode: 'cover',
+        backgroundColor: splashBackground,
+      },
     },
     web: {
-      favicon: './assets/favicon.png',
+  favicon: './assets/logo.png',
     },
     extra: {
       ...(config.extra ?? {}),
