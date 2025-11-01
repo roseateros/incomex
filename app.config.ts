@@ -43,7 +43,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       versionCode: 3,
-      googleServicesFile: './google-services.json',
       splash: {
         image: './assets/splash-icon.png',
         resizeMode: 'cover',
