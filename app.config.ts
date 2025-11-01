@@ -9,7 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config,
     name: 'incomex',
     slug: 'incomex',
-    version: '1.0.2',
+    version: '1.0.3',
     orientation: 'portrait',
     icon: './assets/logo.png',
     userInterfaceStyle: 'light',
@@ -42,7 +42,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
-      versionCode: 2,
+      versionCode: 3,
       googleServicesFile: './google-services.json',
       splash: {
         image: './assets/splash-icon.png',
@@ -60,6 +60,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       supabaseUrl,
       supabaseAnonKey,
+      googleMobileAdsAppId: 'ca-app-pub-9831692105789559~4243265868',
     },
   };
 };

@@ -29,6 +29,7 @@ import {
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { TableView } from '../components/TableView';
 import { Toast } from '../components/Toast';
+import AdBanner from '../components/AdBanner';
 import { darkTheme, lightTheme } from '../theme/colors';
 import { formatNumber } from '../utils/formatNumber';
 import type { DailySummary, Transaction } from '../types';
@@ -400,6 +401,9 @@ export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
             </View>
           ) : null}
         </ScrollView>
+        
+        {/* Banner Ad at bottom */}
+        <AdBanner style={styles.adBanner} />
       </SafeAreaView>
 
       <ConfirmDialog
@@ -632,5 +636,11 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  adBanner: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
 });

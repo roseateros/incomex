@@ -12,7 +12,7 @@ const AdInterstitial: React.FC<AdInterstitialProps> = ({ onAdClosed, children })
   const [loaded, setLoaded] = useState(false);
 
   // Para desarrollo usa TestIds, para producción usa tu Ad Unit ID real
-  const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-9831692105789559/xxxxxxxx';
+  const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-9831692105789559/8254663062';
 
   useEffect(() => {
     const interstitialAd = InterstitialAd.createForAdRequest(adUnitId, {

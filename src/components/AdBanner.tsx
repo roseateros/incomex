@@ -14,7 +14,7 @@ const AdBanner: React.FC<AdBannerProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Para desarrollo usa TestIds, para producción usa tu Ad Unit ID real
-  const adUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-9831692105789559/xxxxxxxx';
+  const adUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-9831692105789559/8254663062';
 
   return (
     <View style={[styles.container, style]}>
