@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, StyleSheet, View, StatusBar, Platform } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
-import { useFocusEffect } from '@react-navigation/native';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -36,14 +35,12 @@ export default function App() {
   const themeContextValue = useMemo(() => ({ theme, toggleTheme }), [theme, toggleTheme]);
 
   // Update StatusBar when theme changes
-  useFocusEffect(
-    useCallback(() => {
-      StatusBar.setBarStyle(theme === 'dark' ? 'light-content' : 'dark-content', true);
-      if (Platform.OS === 'android') {
-        StatusBar.setBackgroundColor(theme === 'dark' ? '#000' : '#fff', true);
-      }
-    }, [theme])
-  );
+  useEffect(() => {
+    StatusBar.setBarStyle(theme === 'dark' ? 'light-content' : 'dark-content', true);
+    if (Platform.OS === 'android') {
+      StatusBar.setBackgroundColor(theme === 'dark' ? '#000' : '#fff', true);
+    }
+  }, [theme]);
 
   const handleRecoveryLink = useCallback(
     async (url: string | null) => {

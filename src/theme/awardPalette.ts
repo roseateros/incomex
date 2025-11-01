@@ -88,9 +88,9 @@ const palettes: Record<'light' | 'dark', AwardPalette> = {
   },
 };
 
-const backgroundGradients: Record<'light' | 'dark', string[]> = {
-  light: ['#F8FAFF', '#EEF4FF', '#E0F2FE'],
-  dark: ['#020617', '#050A1E', '#111827'],
+const backgroundGradients = {
+  light: ['#F8FAFF', '#EEF4FF', '#E0F2FE'] as const,
+  dark: ['#020617', '#050A1E', '#111827'] as const,
 };
 
 const primaryGlows: Record<'light' | 'dark', string[]> = {
