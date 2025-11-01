@@ -9,7 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config,
     name: 'incomex',
     slug: 'incomex',
-    version: '1.0.3',
+    version: '1.0.4',
     orientation: 'portrait',
     icon: './assets/app_logo.png',
     userInterfaceStyle: 'light',
@@ -34,12 +34,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       package: 'com.roseateros.incomex',
       icon: './assets/app_logo.png',
       adaptiveIcon: {
-        foregroundImage: './assets/adaptive-icon.png',
+        foregroundImage: './assets/app_logo.png',
         backgroundColor: splashBackground,
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
-      versionCode: 3,
+      versionCode: 4,
       splash: {
         image: './assets/splash-icon.png',
         resizeMode: 'cover',
