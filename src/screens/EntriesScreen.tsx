@@ -21,7 +21,6 @@ import type { Entry, EntryDraft } from '../types/entry';
 import type { Session } from '@supabase/supabase-js';
 import { AwardBackground } from '../components/AwardBackground';
 import { useAwardPalette } from '../theme/awardPalette';
-import AdBanner from '../components/AdBanner';
 
 const DATE_INPUT_FORMAT = 'yyyy-MM-dd';
 
@@ -242,9 +241,6 @@ export const EntriesScreen = ({ session }: EntriesScreenProps) => {
             </View>
           </View>
         </Modal>
-        
-        {/* Banner Ad at bottom */}
-        <AdBanner style={styles.adBanner} />
       </SafeAreaView>
     </AwardBackground>
   );
@@ -399,11 +395,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.2,
     textTransform: 'uppercase',
-  },
-  adBanner: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
   },
 });
