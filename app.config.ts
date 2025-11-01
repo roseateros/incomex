@@ -15,7 +15,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     userInterfaceStyle: 'light',
     newArchEnabled: true,
     plugins: [
-      'react-native-google-mobile-ads'
+      [
+        'react-native-google-mobile-ads',
+        {
+          androidAppId: 'ca-app-pub-9831692105789559~4243265868',
+        }
+      ]
     ],
     splash: {
       image: './assets/splash-icon.png',
@@ -43,6 +48,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       versionCode: 3,
+      googleServicesFile: './google-services.json',
       splash: {
         image: './assets/splash-icon.png',
         resizeMode: 'cover',
