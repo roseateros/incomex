@@ -152,7 +152,12 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: theme === 'dark' ? '#000' : '#fff' }]}>
+        <StatusBar
+          barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
+          backgroundColor={theme === 'dark' ? '#000' : '#fff'}
+          translucent={false}
+        />
         <ActivityIndicator size="large" color="#2563eb" />
       </View>
     );
@@ -161,13 +166,13 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AppThemeContext.Provider value={themeContextValue}>
-  <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme === 'dark' ? '#000' : '#fff' }]}>
           <StatusBar
-            barStyle={Platform.OS === 'android' ? 'light-content' : 'dark-content'}
-            backgroundColor="#050A1E"
-            translucent={true}
+            barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
+            backgroundColor={theme === 'dark' ? '#000' : '#fff'}
+            translucent={false}
           />
-          <View style={styles.container}>
+          <View style={[styles.container, { backgroundColor: theme === 'dark' ? '#000' : '#fff' }]}>
             {authFlow === 'reset' ? (
               <ResetPassword
                 email={resetEmail ?? undefined}
@@ -189,11 +194,9 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   loadingContainer: {
     flex: 1,
