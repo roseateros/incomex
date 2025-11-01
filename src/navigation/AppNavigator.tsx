@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
+import { StatusBar as RNStatusBar, Platform } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 import { TouchableOpacity, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -29,6 +30,13 @@ export const AppNavigator = ({ session }: AppNavigatorProps) => {
   const [profileVisible, setProfileVisible] = useState(false);
   const tabBackgroundGradient = getAwardBackground(currentTheme);
   const tabOverlay = isDark ? 'rgba(2, 6, 23, 0.78)' : 'rgba(255, 255, 255, 0.86)';
+
+  useEffect(() => {
+    RNStatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content', true);
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor(isDark ? '#000' : '#fff', true);
+    }
+  }, [isDark]);
 
   const navigationTheme = {
     ...(isDark ? DarkTheme : DefaultTheme),

@@ -21,20 +21,16 @@ export default function App() {
   const toggleTheme = useCallback(() => {
     setTheme((prev: AppTheme) => {
       const newTheme = prev === 'light' ? 'dark' : 'light';
-      // Update StatusBar immediately
-      setTimeout(() => {
-        StatusBar.setBarStyle(newTheme === 'dark' ? 'light-content' : 'dark-content', true);
-        if (Platform.OS === 'android') {
-          StatusBar.setBackgroundColor(newTheme === 'dark' ? '#000' : '#fff', true);
-        }
-      }, 0);
+      StatusBar.setBarStyle(newTheme === 'dark' ? 'light-content' : 'dark-content', true);
+      if (Platform.OS === 'android') {
+        StatusBar.setBackgroundColor(newTheme === 'dark' ? '#000' : '#fff', true);
+      }
       return newTheme;
     });
   }, []);
 
   const themeContextValue = useMemo(() => ({ theme, toggleTheme }), [theme, toggleTheme]);
 
-  // Update StatusBar when theme changes
   useEffect(() => {
     StatusBar.setBarStyle(theme === 'dark' ? 'light-content' : 'dark-content', true);
     if (Platform.OS === 'android') {
@@ -174,7 +170,7 @@ export default function App() {
         <StatusBar
           barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
           backgroundColor={theme === 'dark' ? '#000' : '#fff'}
-          translucent={false}
+          translucent={true}
         />
         <ActivityIndicator size="large" color="#2563eb" />
       </View>
@@ -184,11 +180,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AppThemeContext.Provider value={themeContextValue}>
-        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme === 'dark' ? '#000' : '#fff' }]}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme === 'dark' ? '#000' : '#fff' }]} edges={['bottom']}>
           <StatusBar
             barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
             backgroundColor={theme === 'dark' ? '#000' : '#fff'}
-            translucent={false}
+            translucent={true}
           />
           <View style={[styles.container, { backgroundColor: theme === 'dark' ? '#000' : '#fff' }]}>
             {authFlow === 'reset' ? (

@@ -250,7 +250,12 @@ export const ProfileSheet = ({ visible, onClose, session }: ProfileSheetProps) =
                 </View>
                 <Switch
                   value={isDark}
-                  onValueChange={toggleTheme}
+                  onValueChange={() => {
+                    toggleTheme();
+                    setTimeout(() => {
+                      onClose();
+                    }, 300);
+                  }}
                   trackColor={{ false: palette.borderSoft, true: palette.highlight }}
                   thumbColor={isDark ? '#FFFFFF' : '#F1F5F9'}
                 />
