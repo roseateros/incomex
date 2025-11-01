@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Linking, StyleSheet, View, SafeAreaView, StatusBar, Platform } from 'react-native';
+import { ActivityIndicator, Linking, StyleSheet, View, StatusBar, Platform } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Auth } from './src/components/Auth';
 import { ResetPassword } from './src/components/ResetPassword';
@@ -76,6 +77,12 @@ export default function App() {
       })
       .catch((error) => {
         console.warn('Supabase session fetch failed', error);
+        // Clear invalid tokens
+        if (error.message?.includes('Invalid Refresh Token') || error.message?.includes('Refresh Token Not Found')) {
+          supabase.auth.signOut();
+          setSession(null);
+          setAuthFlow('auth');
+        }
       })
       .finally(() => {
         setIsLoading(false);
@@ -90,8 +97,14 @@ export default function App() {
         return;
       }
 
-      if (event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
         setResetEmail(null);
+        setAuthFlow('auth');
+      }
+
+      // Handle token refresh errors
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        setSession(null);
         setAuthFlow('auth');
       }
 
