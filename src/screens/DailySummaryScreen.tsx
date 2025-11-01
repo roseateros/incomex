@@ -151,7 +151,7 @@ export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
       <Modal visible={showCalendar} transparent animationType="fade" onRequestClose={() => setShowCalendar(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowCalendar(false)}>
           <View
-            style={[styles.calendarContainer, { backgroundColor: palette.surface, borderColor: palette.border }]}
+            style={[styles.calendarContainer, { backgroundColor: palette.surface, borderColor: palette.borderSoft }]}
             onStartShouldSetResponder={() => true}
           >
             <View style={styles.calendarHeader}>
@@ -186,7 +186,10 @@ export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
                     key={day.toISOString()}
                     style={[
                       styles.dayCell,
-                      isSelected && { backgroundColor: palette.highlight },
+                      isSelected && { 
+                        backgroundColor: palette.highlight,
+                        borderRadius: 20
+                      },
                       isToday && !isSelected && { borderWidth: 2, borderColor: palette.accent },
                     ]}
                     onPress={() => selectDate(day)}
@@ -274,7 +277,7 @@ export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
           {renderCalendar()}
 
           <TouchableOpacity
-            style={[styles.dateSelector, { backgroundColor: palette.surface, borderColor: palette.border }]}
+            style={[styles.dateSelector, { backgroundColor: 'transparent', borderColor: palette.borderSoft }]}
             onPress={() => setShowCalendar(true)}
           >
             <CalendarIcon size={24} color={palette.accent} />
@@ -299,7 +302,7 @@ export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
           />
 
           {summary && (summary.totalIncome > 0 || summary.totalExpenses > 0) ? (
-            <View style={[styles.detailsContainer, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+            <View style={[styles.detailsContainer, { backgroundColor: 'transparent', borderColor: palette.borderSoft }]}>
               <Text style={[styles.detailsTitle, { color: palette.text }]}>Desglose Detallado</Text>
 
               <View style={[styles.detailsBox, { backgroundColor: palette.surfaceStrong, borderColor: palette.border }]}>
@@ -358,7 +361,7 @@ export const DailySummaryScreen = ({ session }: DailySummaryScreenProps) => {
           ) : null}
 
           {summary && summary.transactions.length > 0 ? (
-            <View style={[styles.transactionsContainer, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+            <View style={[styles.transactionsContainer, { backgroundColor: 'transparent', borderColor: palette.borderSoft }]}>
               <Text style={[styles.detailsTitle, { color: palette.text }]}>Transacciones del Día</Text>
               {summary.transactions.map((transaction) => {
                 const isIncome = transaction.type === 'income';
@@ -448,11 +451,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     borderWidth: 1,
   },
   dateTextContainer: {
@@ -474,11 +472,6 @@ const styles = StyleSheet.create({
     marginTop: 24,
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     borderWidth: 1,
   },
   detailsTitle: {
@@ -538,11 +531,6 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     borderRadius: 16,
     padding: 20,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
   },
   calendarHeader: {
     flexDirection: 'row',
@@ -557,11 +545,12 @@ const styles = StyleSheet.create({
   },
   weekdayRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     marginBottom: 10,
+    paddingHorizontal: 0,
+    marginHorizontal: 0,
   },
   weekdayText: {
-    width: 40,
+    width: '14.28%',
     textAlign: 'center',
     fontSize: 12,
     fontWeight: '600',
@@ -569,6 +558,8 @@ const styles = StyleSheet.create({
   daysGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    paddingHorizontal: 0,
+    marginHorizontal: 0,
   },
   dayCell: {
     width: '14.28%',
@@ -580,16 +571,13 @@ const styles = StyleSheet.create({
   dayText: {
     fontSize: 14,
     fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 18,
   },
   transactionsContainer: {
     marginTop: 24,
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     borderWidth: 1,
   },
   transactionItem: {

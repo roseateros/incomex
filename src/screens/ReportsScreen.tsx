@@ -173,7 +173,7 @@ export const ReportsScreen = ({ session }: ReportsScreenProps) => {
             </View>
           ) : null}
 
-          <View style={[styles.yearSelector, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+          <View style={[styles.yearSelector, { backgroundColor: 'transparent', borderColor: palette.borderSoft }]}>
             <TouchableOpacity onPress={() => changeYear(-1)}>
               <ArrowLeftIcon size={28} color={palette.text} />
             </TouchableOpacity>
@@ -188,7 +188,7 @@ export const ReportsScreen = ({ session }: ReportsScreenProps) => {
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.totalCard, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+          <View style={[styles.totalCard, { backgroundColor: 'transparent', borderColor: palette.borderSoft }]}>
             <Text style={[styles.totalCardTitle, { color: palette.text }]}>Resumen Anual {selectedYear}</Text>
             <View style={styles.totalCardContent}>
               <View style={styles.totalRow}>
@@ -258,11 +258,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     borderWidth: 1,
   },
   yearInfo: {
@@ -278,11 +273,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     borderWidth: 1,
   },
   totalCardTitle: {

@@ -143,7 +143,7 @@ export const MonthlySummaryScreen = ({ session }: MonthlySummaryScreenProps) => 
     >
       <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowMonthPicker(false)}>
         <View
-          style={[styles.pickerContainer, { backgroundColor: palette.surface, borderColor: palette.border }]}
+          style={[styles.pickerContainer, { backgroundColor: palette.surface, borderColor: palette.borderSoft }]}
           onStartShouldSetResponder={() => true}
         >
           <View style={styles.yearHeader}>
@@ -249,7 +249,7 @@ export const MonthlySummaryScreen = ({ session }: MonthlySummaryScreenProps) => 
           {renderMonthPicker()}
 
           <TouchableOpacity
-            style={[styles.header, { backgroundColor: palette.surface, borderColor: palette.border }]}
+            style={[styles.header, { backgroundColor: 'transparent', borderColor: palette.borderSoft }]}
             onPress={() => {
               setPickerYear(selectedYear);
               setShowMonthPicker(true);
@@ -261,7 +261,7 @@ export const MonthlySummaryScreen = ({ session }: MonthlySummaryScreenProps) => 
             <ChartIcon size={28} color={palette.accent} />
           </TouchableOpacity>
 
-          <View style={[styles.summaryBox, { backgroundColor: palette.surface, borderColor: palette.border }]}
+          <View style={[styles.summaryBox, { backgroundColor: 'transparent', borderColor: palette.borderSoft }]}
           >
             <View style={styles.summaryRow}>
               <View style={styles.summaryItem}>
@@ -325,11 +325,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 12,
     marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     borderWidth: 1,
   },
   title: {
@@ -342,11 +337,6 @@ const styles = StyleSheet.create({
   summaryBox: {
     borderRadius: 12,
     padding: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     marginBottom: 20,
     borderWidth: 1,
   },
@@ -389,11 +379,6 @@ const styles = StyleSheet.create({
     maxWidth: 450,
     borderRadius: 16,
     padding: 24,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
     borderWidth: 1,
   },
   yearHeader: {
@@ -425,5 +410,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     textAlign: 'center',
+    lineHeight: 20,
   },
 });

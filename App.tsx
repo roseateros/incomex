@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, StyleSheet, View, StatusBar, Platform } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
+import * as SplashScreen from 'expo-splash-screen';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Prevent the splash screen from auto-hiding before asset loading is complete
+SplashScreen.preventAutoHideAsync();
 
 import { Auth } from './src/components/Auth';
 import { ResetPassword } from './src/components/ResetPassword';
@@ -37,6 +41,13 @@ export default function App() {
       StatusBar.setBackgroundColor(theme === 'dark' ? '#000' : '#fff', true);
     }
   }, [theme]);
+
+  // Hide splash screen when app is ready
+  useEffect(() => {
+    if (!isLoading) {
+      SplashScreen.hideAsync();
+    }
+  }, [isLoading]);
 
   const handleRecoveryLink = useCallback(
     async (url: string | null) => {

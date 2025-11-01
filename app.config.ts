@@ -9,12 +9,22 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config,
     name: 'incomex',
     slug: 'incomex',
-    version: '1.0.4',
+    version: '1.0.5',
     orientation: 'portrait',
     icon: './assets/app_logo.png',
     userInterfaceStyle: 'light',
     newArchEnabled: true,
-    plugins: [],
+    plugins: [
+      [
+        'expo-splash-screen',
+        {
+          image: './assets/splash-icon.png',
+          imageWidth: 200,
+          resizeMode: 'contain',
+          backgroundColor: splashBackground,
+        },
+      ],
+    ],
     splash: {
       image: './assets/splash-icon.png',
       resizeMode: 'cover',
@@ -39,7 +49,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
-      versionCode: 4,
+      versionCode: 5,
       splash: {
         image: './assets/splash-icon.png',
         resizeMode: 'cover',

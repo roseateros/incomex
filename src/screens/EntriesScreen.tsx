@@ -118,7 +118,7 @@ export const EntriesScreen = ({ session }: EntriesScreenProps) => {
     const amountColor = item.amount >= 0 ? palette.positive : palette.negative;
 
     return (
-      <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+      <View style={[styles.card, { backgroundColor: 'transparent', borderColor: palette.borderSoft }]}>
         <View style={styles.cardHeader}>
           <Text style={[styles.cardCategory, { color: palette.text }]}>{item.category ?? 'Sin categoría'}</Text>
           <Text style={[styles.cardAmount, { color: amountColor }]}>
@@ -267,10 +267,6 @@ const styles = StyleSheet.create({
     borderRadius: 31,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
   },
   fabIcon: {
     fontSize: 34,
@@ -292,11 +288,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 4,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -378,10 +369,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   modalPrimaryButton: {
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
   },
   modalPrimaryText: {
     fontSize: 15,
